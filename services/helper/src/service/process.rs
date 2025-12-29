@@ -39,6 +39,10 @@ pub struct ProcessHandle {
     child: Child,
 }
 
+// Windows HANDLE 类型实际上是线程安全的，可以安全地在线程间传递
+// 我们需要手动实现 Send trait
+unsafe impl Send for ProcessHandle {}
+
 impl ProcessHandle {
     #[cfg(windows)]
     pub fn spawn_windows(

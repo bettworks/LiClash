@@ -211,9 +211,10 @@ pub async fn run_service() -> anyhow::Result<()> {
     let api_logs = warp::get().and(warp::path("logs")).map(|| get_logs());
 
     tokio::select! {
-        result = warp::serve(api_ping.or(api_heartbeat).or(api_start).or(api_stop).or(api_logs))
+        _ = warp::serve(api_ping.or(api_heartbeat).or(api_start).or(api_stop).or(api_logs))
             .run(([127, 0, 0, 1], LISTEN_PORT)) => {
-            result.map_err(|e| anyhow::anyhow!("Warp server error: {}", e))
+            // warp::serve().run() 返回 ()，表示服务器运行直到被关闭
+            Ok(())
         }
         _ = heartbeat_monitor => {
             Ok(())
