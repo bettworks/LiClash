@@ -103,24 +103,54 @@ jobs:
         run: |
           # 清理 apt 缓存，解决 Hash Sum mismatch 问题
           sudo rm -rf /var/lib/apt/lists/*
-          # 重试 apt update（最多3次）
-          for i in {1..3}; do
+          # 重试 apt update（最多5次，增加等待时间）
+          APT_UPDATE_SUCCESS=false
+          for i in {1..5}; do
             echo "Attempt $i: Updating apt cache..."
-            if sudo apt-get update -y; then
+            # 使用 -o Acquire::http::Timeout=30 增加超时时间
+            # 使用 -o Acquire::Retries=3 增加重试次数
+            # 使用 set +e 允许命令失败，然后检查退出码
+            set +e
+            sudo apt-get -o Acquire::http::Timeout=30 -o Acquire::Retries=3 update -y 2>&1 | tee /tmp/apt-update.log
+            APT_EXIT_CODE=${PIPESTATUS[0]}
+            set -e
+            
+            # 检查退出码
+            if [ $APT_EXIT_CODE -eq 0 ]; then
               echo "apt update succeeded on attempt $i"
+              APT_UPDATE_SUCCESS=true
               break
             else
-              echo "apt update failed on attempt $i"
-              if [ $i -lt 3 ]; then
-                echo "Cleaning cache and retrying..."
+              echo "apt update failed on attempt $i (exit code: $APT_EXIT_CODE)"
+              # 检查是否是 Hash Sum mismatch 错误（可以忽略 dep11 组件错误）
+              if grep -q "Hash Sum mismatch" /tmp/apt-update.log && grep -q "dep11" /tmp/apt-update.log; then
+                echo "Warning: Hash Sum mismatch detected for dep11 components (non-critical), continuing..."
+                # dep11 组件不是必需的，可以继续安装
+                APT_UPDATE_SUCCESS=true
+                break
+              fi
+              if [ $i -lt 5 ]; then
+                echo "Cleaning cache and retrying in 5 seconds..."
                 sudo rm -rf /var/lib/apt/lists/*
-                sleep 2
+                sleep 5
               else
-                echo "apt update failed after 3 attempts"
-                exit 1
+                echo "apt update failed after 5 attempts"
+                # 最后一次尝试：如果只是 dep11 错误，继续安装
+                if grep -q "Hash Sum mismatch" /tmp/apt-update.log && grep -q "dep11" /tmp/apt-update.log; then
+                  echo "Warning: Only dep11 components failed, continuing with installation..."
+                  APT_UPDATE_SUCCESS=true
+                else
+                  echo "Fatal: apt update failed with critical errors"
+                  exit 1
+                fi
               fi
             fi
           done
+          
+          if [ "$APT_UPDATE_SUCCESS" != "true" ]; then
+            echo "Error: apt update failed after all attempts"
+            exit 1
+          fi
           # CMake 和构建工具
           sudo apt-get install -y cmake ninja-build build-essential pkg-config
           # GTK3 和相关依赖（Flutter Linux 必需）
