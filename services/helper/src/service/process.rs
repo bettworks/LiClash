@@ -226,7 +226,6 @@ impl Drop for ProcessHandle {
     fn drop(&mut self) {
         // 确保进程被终止
         let _ = self.kill();
-        // wait() 在 kill() 之后可能失败（因为 handle 已关闭），这是预期的
         let _ = self.wait();
     }
 }

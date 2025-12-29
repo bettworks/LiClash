@@ -204,30 +204,6 @@ class Request {
     }
   }
 
-  /// 发送心跳到Helper服务
-  Future<bool> sendHeartbeat() async {
-    if (!system.isWindows) {
-      return true;
-    }
-
-    try {
-      final response = await _dio
-          .post(
-            'http://$localhost:$helperPort/heartbeat',
-            options: Options(
-              responseType: ResponseType.plain,
-            ),
-          )
-          .timeout(
-            const Duration(
-              milliseconds: 1000,
-            ),
-          );
-      return response.statusCode == HttpStatus.ok;
-    } catch (_) {
-      return false;
-    }
-  }
 }
 
 final request = Request();
