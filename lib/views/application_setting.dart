@@ -110,7 +110,7 @@ class _AutoLaunchItemState extends ConsumerState<AutoLaunchItem> {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final autoLaunchEnabled = ref.watch(
       appSettingProvider.select((state) => state.autoLaunch),
     );

@@ -4,8 +4,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:launch_at_startup/launch_at_startup.dart';
 
+import 'package:li_clash/enum/enum.dart';
+
 import 'constant.dart';
-import 'enum/enum.dart';
 import 'system.dart';
 
 enum AutoLaunchMode {

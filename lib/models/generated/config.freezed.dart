@@ -26,6 +26,7 @@ mixin _$AppSettingProps {
       throw _privateConstructorUsedError;
   bool get onlyStatisticsProxy => throw _privateConstructorUsedError;
   bool get autoLaunch => throw _privateConstructorUsedError;
+  bool get adminAutoLaunch => throw _privateConstructorUsedError;
   bool get silentLaunch => throw _privateConstructorUsedError;
   bool get autoRun => throw _privateConstructorUsedError;
   bool get openLogs => throw _privateConstructorUsedError;
@@ -62,6 +63,7 @@ abstract class $AppSettingPropsCopyWith<$Res> {
       List<DashboardWidget> dashboardWidgets,
       bool onlyStatisticsProxy,
       bool autoLaunch,
+      bool adminAutoLaunch,
       bool silentLaunch,
       bool autoRun,
       bool openLogs,
@@ -96,6 +98,7 @@ class _$AppSettingPropsCopyWithImpl<$Res, $Val extends AppSettingProps>
     Object? dashboardWidgets = null,
     Object? onlyStatisticsProxy = null,
     Object? autoLaunch = null,
+    Object? adminAutoLaunch = null,
     Object? silentLaunch = null,
     Object? autoRun = null,
     Object? openLogs = null,
@@ -126,6 +129,10 @@ class _$AppSettingPropsCopyWithImpl<$Res, $Val extends AppSettingProps>
       autoLaunch: null == autoLaunch
           ? _value.autoLaunch
           : autoLaunch // ignore: cast_nullable_to_non_nullable
+              as bool,
+      adminAutoLaunch: null == adminAutoLaunch
+          ? _value.adminAutoLaunch
+          : adminAutoLaunch // ignore: cast_nullable_to_non_nullable
               as bool,
       silentLaunch: null == silentLaunch
           ? _value.silentLaunch
@@ -197,6 +204,7 @@ abstract class _$$AppSettingPropsImplCopyWith<$Res>
       List<DashboardWidget> dashboardWidgets,
       bool onlyStatisticsProxy,
       bool autoLaunch,
+      bool adminAutoLaunch,
       bool silentLaunch,
       bool autoRun,
       bool openLogs,
@@ -229,6 +237,7 @@ class __$$AppSettingPropsImplCopyWithImpl<$Res>
     Object? dashboardWidgets = null,
     Object? onlyStatisticsProxy = null,
     Object? autoLaunch = null,
+    Object? adminAutoLaunch = null,
     Object? silentLaunch = null,
     Object? autoRun = null,
     Object? openLogs = null,
@@ -259,6 +268,10 @@ class __$$AppSettingPropsImplCopyWithImpl<$Res>
       autoLaunch: null == autoLaunch
           ? _value.autoLaunch
           : autoLaunch // ignore: cast_nullable_to_non_nullable
+              as bool,
+      adminAutoLaunch: null == adminAutoLaunch
+          ? _value.adminAutoLaunch
+          : adminAutoLaunch // ignore: cast_nullable_to_non_nullable
               as bool,
       silentLaunch: null == silentLaunch
           ? _value.silentLaunch
@@ -325,6 +338,7 @@ class _$AppSettingPropsImpl implements _AppSettingProps {
       final List<DashboardWidget> dashboardWidgets = defaultDashboardWidgets,
       this.onlyStatisticsProxy = false,
       this.autoLaunch = false,
+      this.adminAutoLaunch = false,
       this.silentLaunch = false,
       this.autoRun = false,
       this.openLogs = false,
@@ -361,6 +375,9 @@ class _$AppSettingPropsImpl implements _AppSettingProps {
   @override
   @JsonKey()
   final bool autoLaunch;
+  @override
+  @JsonKey()
+  final bool adminAutoLaunch;
   @override
   @JsonKey()
   final bool silentLaunch;
@@ -403,7 +420,7 @@ class _$AppSettingPropsImpl implements _AppSettingProps {
 
   @override
   String toString() {
-    return 'AppSettingProps(locale: $locale, dashboardWidgets: $dashboardWidgets, onlyStatisticsProxy: $onlyStatisticsProxy, autoLaunch: $autoLaunch, silentLaunch: $silentLaunch, autoRun: $autoRun, openLogs: $openLogs, closeConnections: $closeConnections, testUrl: $testUrl, isAnimateToPage: $isAnimateToPage, autoCheckUpdate: $autoCheckUpdate, showLabel: $showLabel, disclaimerAccepted: $disclaimerAccepted, minimizeOnExit: $minimizeOnExit, hidden: $hidden, developerMode: $developerMode, recoveryStrategy: $recoveryStrategy)';
+    return 'AppSettingProps(locale: $locale, dashboardWidgets: $dashboardWidgets, onlyStatisticsProxy: $onlyStatisticsProxy, autoLaunch: $autoLaunch, adminAutoLaunch: $adminAutoLaunch, silentLaunch: $silentLaunch, autoRun: $autoRun, openLogs: $openLogs, closeConnections: $closeConnections, testUrl: $testUrl, isAnimateToPage: $isAnimateToPage, autoCheckUpdate: $autoCheckUpdate, showLabel: $showLabel, disclaimerAccepted: $disclaimerAccepted, minimizeOnExit: $minimizeOnExit, hidden: $hidden, developerMode: $developerMode, recoveryStrategy: $recoveryStrategy)';
   }
 
   @override
@@ -418,6 +435,8 @@ class _$AppSettingPropsImpl implements _AppSettingProps {
                 other.onlyStatisticsProxy == onlyStatisticsProxy) &&
             (identical(other.autoLaunch, autoLaunch) ||
                 other.autoLaunch == autoLaunch) &&
+            (identical(other.adminAutoLaunch, adminAutoLaunch) ||
+                other.adminAutoLaunch == adminAutoLaunch) &&
             (identical(other.silentLaunch, silentLaunch) ||
                 other.silentLaunch == silentLaunch) &&
             (identical(other.autoRun, autoRun) || other.autoRun == autoRun) &&
@@ -451,6 +470,7 @@ class _$AppSettingPropsImpl implements _AppSettingProps {
       const DeepCollectionEquality().hash(_dashboardWidgets),
       onlyStatisticsProxy,
       autoLaunch,
+      adminAutoLaunch,
       silentLaunch,
       autoRun,
       openLogs,
@@ -489,6 +509,7 @@ abstract class _AppSettingProps implements AppSettingProps {
       final List<DashboardWidget> dashboardWidgets,
       final bool onlyStatisticsProxy,
       final bool autoLaunch,
+      final bool adminAutoLaunch,
       final bool silentLaunch,
       final bool autoRun,
       final bool openLogs,
@@ -515,6 +536,8 @@ abstract class _AppSettingProps implements AppSettingProps {
   bool get onlyStatisticsProxy;
   @override
   bool get autoLaunch;
+  @override
+  bool get adminAutoLaunch;
   @override
   bool get silentLaunch;
   @override
