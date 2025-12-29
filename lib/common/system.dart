@@ -310,6 +310,20 @@ class Windows {
       commandLine.replaceFirst('%s', taskPath),
     );
   }
+
+  /// 取消 Windows 任务计划中的开机自启动任务
+  Future<bool> unregisterTask(String appName) async {
+    final commandLine = [
+      '/Delete',
+      '/TN',
+      appName,
+      '/F',
+    ].join(' ');
+    return runas(
+      'schtasks',
+      commandLine,
+    );
+  }
 }
 
 final windows = system.isWindows ? Windows() : null;

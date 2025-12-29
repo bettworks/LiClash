@@ -274,10 +274,11 @@ class AppController {
   }
 
   Future<Result<bool>> _requestAdmin(bool enableTun) async {
-    if(system.isWindows && kDebugMode){
+    if (system.isWindows && kDebugMode) {
       return Result.success(false);
     }
     final realTunEnable = _ref.read(realTunEnableProvider);
+    // 当用户尝试从「未开启」切换到「开启」TUN 时，检查/安装提权服务
     if (enableTun != realTunEnable && realTunEnable == false) {
       final code = await system.authorizeCore();
       switch (code) {
@@ -287,6 +288,10 @@ class AppController {
         case AuthorizeCode.none:
           break;
         case AuthorizeCode.error:
+          // Windows 下提示用户需要使用管理员权限运行程序
+          if (system.isWindows) {
+            globalState.showNotifier('启用虚拟网卡需要管理员权限，请以管理员身份运行程序');
+          }
           enableTun = false;
           break;
       }

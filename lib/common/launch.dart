@@ -23,14 +23,33 @@ class AutoLaunch {
   }
 
   Future<bool> get isEnable async {
+    if (system.isWindows) {
+      // Windows 上改为通过任务计划实现开机自启动
+      try {
+        final result = await Process.run(
+          'schtasks',
+          ['/Query', '/TN', appName],
+        );
+        return result.exitCode == 0;
+      } catch (_) {
+        return false;
+      }
+    }
     return await launchAtStartup.isEnabled();
   }
 
   Future<bool> enable() async {
+    if (system.isWindows) {
+      // 使用任务计划实现 Windows 开机自启动（管理员模式）
+      return await windows?.registerTask(appName) ?? false;
+    }
     return await launchAtStartup.enable();
   }
 
   Future<bool> disable() async {
+    if (system.isWindows) {
+      return await windows?.unregisterTask(appName) ?? false;
+    }
     return await launchAtStartup.disable();
   }
 

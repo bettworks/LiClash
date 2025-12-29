@@ -86,12 +86,25 @@ class ClashService extends ClashHandlerInterface {
     final arg = system.isWindows
         ? '${serverSocket.port}'
         : serverSocket.address.address;
-    if (system.isWindows && await system.checkIsAdmin()) {
-      final isSuccess = await request.startCoreByHelper(arg);
-      if (isSuccess) {
-        return;
+
+    if (system.isWindows) {
+      // 强制使用 Helper 服务模式：先确保 Helper 服务已注册并启动
+      final serviceOk = await system.registerService();
+      if (serviceOk) {
+        final isSuccess = await request.startCoreByHelper(arg);
+        if (isSuccess) {
+          isStarting = false;
+          return;
+        }
+      } else {
+        // 注册服务失败（例如用户拒绝 UAC），提示但仍尝试直接启动核心（无服务模式，可能影响 TUN）
+        globalState.showNotifier(
+          'Helper 服务启动失败，已尝试直接启动核心，某些需要管理员权限的功能可能不可用',
+        );
       }
     }
+
+    // 非 Windows 平台，或 Helper 启动失败时的回退方案：直接启动核心进程
     process = await Process.start(
       appPath.corePath,
       [
