@@ -56,6 +56,21 @@ jobs:
           echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> android/local.properties
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/local.properties
 
+      - name: Configure Gradle for Network Issues
+        if: startsWith(matrix.platform,'android')
+        run: |
+          mkdir -p ~/.gradle
+          cat >> ~/.gradle/gradle.properties << EOF
+          org.gradle.daemon=true
+          org.gradle.parallel=true
+          org.gradle.configureondemand=true
+          org.gradle.caching=true
+          org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m
+          systemProp.http.connectionTimeout=60000
+          systemProp.http.socketTimeout=60000
+          systemProp.http.retryCount=3
+          EOF
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -84,6 +99,30 @@ jobs:
         run: flutter pub get
 
       - name: Setup
+        if: startsWith(matrix.platform,'android')
+        run: |
+          # 重试机制：最多重试3次
+          for i in {1..3}; do
+            echo "Attempt $i of 3"
+            if dart setup.dart ${{ matrix.platform }} ${{ matrix.arch && format('--arch {0}', matrix.arch) }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }}; then
+              echo "Build succeeded on attempt $i"
+              exit 0
+            else
+              echo "Build failed on attempt $i"
+              if [ $i -lt 3 ]; then
+                echo "Waiting 10 seconds before retry..."
+                sleep 10
+                # 清理 Gradle 缓存
+                rm -rf ~/.gradle/caches/
+                rm -rf android/.gradle/
+              fi
+            fi
+          done
+          echo "All build attempts failed"
+          exit 1
+
+      - name: Setup
+        if: ${{ !startsWith(matrix.platform,'android') }}
         run: dart setup.dart ${{ matrix.platform }} ${{ matrix.arch && format('--arch {0}', matrix.arch) }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }}
 
       - name: Upload
