@@ -361,7 +361,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage(
       "Allow IPv6 inbound",
     ),
-    "ja": MessageLookupByLibrary.simpleMessage("Japanese"),
     "just": MessageLookupByLibrary.simpleMessage("Just"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage(
       "Tcp keep alive interval",
@@ -615,7 +614,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "Bypass private route address",
     ),
     "routeMode_config": MessageLookupByLibrary.simpleMessage("Use config"),
-    "ru": MessageLookupByLibrary.simpleMessage("Russian"),
     "rule": MessageLookupByLibrary.simpleMessage("Rule"),
     "ruleName": MessageLookupByLibrary.simpleMessage("Rule name"),
     "ruleProviders": MessageLookupByLibrary.simpleMessage("Rule providers"),

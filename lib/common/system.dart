@@ -202,19 +202,28 @@ class Windows {
   }
 
   Future<WindowsHelperServiceStatus> checkService() async {
-    // final qcResult = await Process.run('sc', ['qc', appHelperService]);
-    // final qcOutput = qcResult.stdout.toString();
-    // if (qcResult.exitCode != 0 || !qcOutput.contains(appPath.helperPath)) {
-    //   return WindowsHelperServiceStatus.none;
-    // }
-    final result = await Process.run('sc', ['query', appHelperService]);
-    if (result.exitCode != 0) {
+    // 并行执行 sc query 和 pingHelper() 检查
+    final scQueryFuture = Process.run('sc', ['query', appHelperService]);
+    final pingHelperFuture = request.pingHelper();
+    
+    // 等待两个检查完成
+    final results = await Future.wait([
+      scQueryFuture,
+      pingHelperFuture,
+    ]);
+    
+    final scResult = results[0] as ProcessResult;
+    final pingSuccess = results[1] as bool;
+    
+    if (scResult.exitCode != 0) {
       return WindowsHelperServiceStatus.none;
     }
-    final output = result.stdout.toString();
-    if (output.contains('RUNNING') && await request.pingHelper()) {
+    
+    final output = scResult.stdout.toString();
+    if (output.contains('RUNNING') && pingSuccess) {
       return WindowsHelperServiceStatus.running;
     }
+    
     return WindowsHelperServiceStatus.presence;
   }
 
@@ -248,12 +257,22 @@ class Windows {
     ].join(' ');
 
     final res = runas('cmd.exe', command);
+    
+    if (!res) {
+      return false;
+    }
 
-    await Future.delayed(
-      Duration(milliseconds: 300),
-    );
-
-    return res;
+    // 智能延迟：轮询检查服务是否真正启动（最多等待 500ms，每次 100ms）
+    for (int i = 0; i < 5; i++) {
+      await Future.delayed(Duration(milliseconds: 100));
+      if (await request.pingHelper()) {
+        return true; // 服务已启动，立即返回
+      }
+    }
+    
+    // 超时后仍检查一次服务状态
+    final status = await checkService();
+    return status == WindowsHelperServiceStatus.running;
   }
 
   Future<bool> registerTask(String appName) async {

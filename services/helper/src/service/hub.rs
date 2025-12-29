@@ -1,6 +1,6 @@
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+use md5::{Digest, Md5};
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, Error, Read};
@@ -17,9 +17,9 @@ pub struct StartParams {
     pub arg: String,
 }
 
-fn sha256_file(path: &str) -> Result<String, Error> {
+fn md5_file(path: &str) -> Result<String, Error> {
     let mut file = File::open(path)?;
-    let mut hasher = Sha256::new();
+    let mut hasher = Md5::new();
     let mut buffer = [0; 4096];
 
     loop {
@@ -39,9 +39,9 @@ static PROCESS: Lazy<Arc<Mutex<Option<std::process::Child>>>> =
     Lazy::new(|| Arc::new(Mutex::new(None)));
 
 fn start(start_params: StartParams) -> impl Reply {
-    let sha256 = sha256_file(start_params.path.as_str()).unwrap_or("".to_string());
-    if sha256 != env!("TOKEN") {
-        return format!("The SHA256 hash of the program requesting execution is: {}. The helper program only allows execution of applications with the SHA256 hash: {}.", sha256,  env!("TOKEN"),);
+    let md5 = md5_file(start_params.path.as_str()).unwrap_or("".to_string());
+    if md5 != env!("TOKEN") {
+        return format!("The MD5 hash of the program requesting execution is: {}. The helper program only allows execution of applications with the MD5 hash: {}.", md5,  env!("TOKEN"),);
     }
     stop();
     let mut process = PROCESS.lock().unwrap();

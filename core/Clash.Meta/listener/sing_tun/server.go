@@ -173,7 +173,7 @@ func New(options LC.Tun, tunnel C.Tunnel, additions ...inbound.Addition) (l *Lis
 	})
 	tunMTU := options.MTU
 	if tunMTU == 0 {
-		tunMTU = 9000
+		tunMTU = 1480
 	}
 	var udpTimeout time.Duration
 	if options.UDPTimeout != 0 {

@@ -85,7 +85,6 @@ flutter {
 
 dependencies {
     implementation(project(":core"))
-    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("com.android.tools.smali:smali-dexlib2:3.0.9") {
         exclude(group = "com.google.guava", module = "guava")
