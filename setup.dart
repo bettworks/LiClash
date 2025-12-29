@@ -299,7 +299,7 @@ class Build {
     final targetPath = join(
       outDir,
       target.name,
-      'LiClashService${target.executableExtensionName}',
+      'LiClashHelperService${target.executableExtensionName}',
     );
     await File(outPath).copy(targetPath);
   }

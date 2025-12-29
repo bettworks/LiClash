@@ -140,7 +140,7 @@ class Request {
           )
           .timeout(
             const Duration(
-              milliseconds: 1000,
+              milliseconds: 2000,
             ),
           );
       if (response.statusCode != HttpStatus.ok) {

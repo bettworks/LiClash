@@ -25,7 +25,7 @@ var
   i: Integer;
   ResultCode: Integer;
 begin
-  Processes := ['LiClash.exe', 'LiClashCore.exe', 'LiClashService.exe'];
+  Processes := ['LiClash.exe', 'LiClashCore.exe', 'LiClashHelperService.exe'];
 
   for i := 0 to GetArrayLength(Processes)-1 do
   begin

@@ -93,7 +93,7 @@ set(CLASH_DIR "../libclash/windows")
 install(PROGRAMS "${CLASH_DIR}/LiClashCore.exe" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
 
-install(PROGRAMS "${CLASH_DIR}/LiClashService.exe" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+install(PROGRAMS "${CLASH_DIR}/LiClashHelperService.exe" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
 
 install(FILES "EnableLoopback.exe" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"

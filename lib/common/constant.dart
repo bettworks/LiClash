@@ -8,7 +8,7 @@ import 'package:li_clash/models/models.dart';
 import 'package:flutter/material.dart';
 
 const appName = 'LiClash';
-const appHelperService = 'LiClashService';
+const appHelperService = 'LiClashHelperService';
 const coreName = 'clash.meta';
 const browserUa =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -91,7 +91,7 @@ const maxLength = 1000;
 
 final mainIsolate = 'LiClashMainIsolate';
 
-final serviceIsolate = 'LiClashServiceIsolate';
+final serviceIsolate = 'LiClashHelperServiceIsolate';
 
 const defaultPrimaryColors = [
   0xFF795548,
