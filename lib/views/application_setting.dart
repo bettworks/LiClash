@@ -1,4 +1,5 @@
 import 'package:li_clash/common/common.dart';
+import 'package:li_clash/enum/enum.dart';
 import 'package:li_clash/providers/config.dart';
 import 'package:li_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -80,26 +81,101 @@ class MinimizeItem extends ConsumerWidget {
   }
 }
 
-class AutoLaunchItem extends ConsumerWidget {
+class AutoLaunchItem extends ConsumerStatefulWidget {
   const AutoLaunchItem({super.key});
 
   @override
+  ConsumerState<AutoLaunchItem> createState() => _AutoLaunchItemState();
+}
+
+class _AutoLaunchItemState extends ConsumerState<AutoLaunchItem> {
+  String _modeDescription = '';
+  bool _isUpdating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateModeDescription();
+  }
+
+  Future<void> _updateModeDescription() async {
+    if (system.isWindows) {
+      final description = await autoLaunch?.getModeDescription() ?? '';
+      if (mounted) {
+        setState(() {
+          _modeDescription = description;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final autoLaunch = ref.watch(
+    final autoLaunchEnabled = ref.watch(
       appSettingProvider.select((state) => state.autoLaunch),
     );
+
+    // 当状态变化时更新模式描述
+    ref.listenManual(
+      appSettingProvider.select((state) => state.autoLaunch),
+      (prev, next) {
+        if (prev != next) {
+          _updateModeDescription();
+        }
+      },
+    );
+
+    // 构建副标题（包含模式描述）
+    final subtitle = system.isWindows && _modeDescription.isNotEmpty
+        ? '${appLocalizations.autoLaunchDesc}$_modeDescription'
+        : appLocalizations.autoLaunchDesc;
+
     return ListItem.switchItem(
       title: Text(appLocalizations.autoLaunch),
-      subtitle: Text(appLocalizations.autoLaunchDesc),
+      subtitle: Text(subtitle),
       delegate: SwitchDelegate(
-        value: autoLaunch,
-        onChanged: (bool value) {
-          ref.read(appSettingProvider.notifier).updateState(
-                (state) => state.copyWith(
-                  autoLaunch: value,
-                ),
-              );
-        },
+        value: autoLaunchEnabled,
+        onChanged: _isUpdating
+            ? null
+            : (bool value) async {
+                setState(() {
+                  _isUpdating = true;
+                });
+
+                // 更新配置状态
+                ref.read(appSettingProvider.notifier).updateState(
+                      (state) => state.copyWith(
+                        autoLaunch: value,
+                      ),
+                    );
+
+                // 实际启用/禁用自启动（智能选择模式）
+                if (value) {
+                  // Windows平台优先尝试管理员模式
+                  final success = await autoLaunch?.enable(
+                        preferAdmin: system.isWindows,
+                      ) ??
+                      false;
+                  if (!success) {
+                    // 启用失败，恢复开关状态
+                    ref.read(appSettingProvider.notifier).updateState(
+                          (state) => state.copyWith(autoLaunch: false),
+                        );
+                  }
+                } else {
+                  // 禁用自启动（同时禁用两种模式）
+                  await autoLaunch?.disable();
+                }
+
+                // 更新模式描述
+                await _updateModeDescription();
+
+                if (mounted) {
+                  setState(() {
+                    _isUpdating = false;
+                  });
+                }
+              },
       ),
     );
   }

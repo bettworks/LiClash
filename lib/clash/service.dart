@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:li_clash/clash/interface.dart';
 import 'package:li_clash/common/common.dart';
+import 'package:li_clash/common/port_manager.dart';
+import 'package:li_clash/common/tun_cleaner.dart';
 import 'package:li_clash/models/core.dart';
 import 'package:li_clash/state.dart';
 
@@ -86,9 +88,22 @@ class ClashService extends ClashHandlerInterface {
     final arg = system.isWindows
         ? '${serverSocket.port}'
         : serverSocket.address.address;
+
+    // Windows平台：启动前清理TUN适配器和检查端口
+    if (system.isWindows) {
+      // 清理残留TUN适配器
+      await tunCleaner?.checkAndClean();
+
+      // 检查并清理端口占用
+      final port = serverSocket.port;
+      await portManager?.ensurePortAvailable(port);
+    }
+
     if (system.isWindows && await system.checkIsAdmin()) {
       final isSuccess = await request.startCoreByHelper(arg);
       if (isSuccess) {
+        _startHeartbeat();
+        isStarting = false;
         return;
       }
     }
@@ -105,7 +120,30 @@ class ClashService extends ClashHandlerInterface {
         commonPrint.log(error);
       }
     });
+    _startHeartbeat();
     isStarting = false;
+  }
+
+  Timer? _heartbeatTimer;
+
+  void _startHeartbeat() {
+    if (!system.isWindows) {
+      return;
+    }
+
+    _stopHeartbeat();
+    // 每30秒发送一次心跳
+    _heartbeatTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) async {
+        await request.sendHeartbeat();
+      },
+    );
+  }
+
+  void _stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
   }
 
   @override
@@ -141,6 +179,7 @@ class ClashService extends ClashHandlerInterface {
 
   @override
   shutdown() async {
+    _stopHeartbeat();
     if (system.isWindows) {
       await request.stopCoreByHelper();
     }

@@ -561,9 +561,24 @@ class AppController {
     updateTray(true);
     await _initCore();
     await _initStatus();
-    autoLaunch?.updateStatus(
-      _ref.read(appSettingProvider).autoLaunch,
-    );
+    // 同步自启动状态（确保配置与实际状态一致）
+    if (system.isDesktop) {
+      final configAutoLaunch = _ref.read(appSettingProvider).autoLaunch;
+      final actualAutoLaunch = await autoLaunch?.isEnable ?? false;
+      
+      // 如果配置与实际状态不一致，同步到实际状态
+      if (configAutoLaunch != actualAutoLaunch) {
+        _ref.read(appSettingProvider.notifier).updateState(
+              (state) => state.copyWith(autoLaunch: actualAutoLaunch),
+            );
+      } else if (configAutoLaunch) {
+        // 如果已启用，智能更新（确保使用最佳模式）
+        autoLaunch?.updateStatus(
+          configAutoLaunch,
+          preferAdmin: system.isWindows,
+        );
+      }
+    }
     autoUpdateProfiles();
     autoCheckUpdate();
     if (!_ref.read(appSettingProvider).silentLaunch) {

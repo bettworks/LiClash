@@ -1,0 +1,37 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:stelliberty/i18n/i18n.dart';
+import 'package:stelliberty/ui/common/modern_feature_card.dart';
+import 'package:stelliberty/ui/widgets/setting/uwp_loopback_dialog.dart';
+import 'package:stelliberty/ui/widgets/modern_tooltip.dart';
+
+/// UWP 回环管理卡片
+/// 仅在 Windows 平台显示
+class UwpLoopbackCard extends StatelessWidget {
+  const UwpLoopbackCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // 仅在 Windows 平台显示
+    if (!Platform.isWindows) {
+      return const SizedBox.shrink();
+    }
+
+    return ModernFeatureLayoutCard(
+      icon: Icons.apps,
+      title: context.translate.uwpLoopback.cardTitle,
+      subtitle: context.translate.uwpLoopback.cardSubtitle,
+      trailing: ModernTooltip(
+        message: context.translate.uwpLoopback.openManager,
+        child: IconButton(
+          icon: const Icon(Icons.open_in_new),
+          onPressed: () {
+            UwpLoopbackDialog.show(context);
+          },
+        ),
+      ),
+      enableHover: true,
+      enableTap: false,
+    );
+  }
+}

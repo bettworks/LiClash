@@ -1,0 +1,1418 @@
+import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:stelliberty/clash/core/subscription_state.dart';
+import 'package:stelliberty/clash/data/subscription_model.dart';
+import 'package:stelliberty/clash/data/override_model.dart' as app_override;
+import 'package:stelliberty/clash/services/subscription_service.dart';
+import 'package:stelliberty/clash/services/override_service.dart';
+import 'package:stelliberty/clash/providers/clash_provider.dart';
+import 'package:stelliberty/clash/providers/override_provider.dart';
+import 'package:stelliberty/clash/manager/manager.dart';
+import 'package:stelliberty/services/path_service.dart';
+import 'package:stelliberty/utils/logger.dart';
+import 'package:stelliberty/clash/config/clash_defaults.dart';
+import 'package:stelliberty/clash/storage/preferences.dart';
+import 'package:stelliberty/src/bindings/signals/signals.dart';
+
+// 订阅更新错误类型
+enum SubscriptionUpdateErrorType {
+  network, // 网络连接错误
+  timeout, // 超时
+  notFound, // 404 未找到
+  forbidden, // 403/401 访问被拒绝
+  serverError, // 服务器错误
+  formatError, // 配置格式错误
+  certificate, // 证书错误
+  unknown, // 未知错误
+}
+
+// 订阅状态管理
+class SubscriptionProvider extends ChangeNotifier {
+  final SubscriptionService _service = SubscriptionService();
+  final OverrideService _overrideService;
+
+  // 状态管理器
+  final SubscriptionStateManager _stateManager =
+      SubscriptionStateManager.instance;
+
+  // ClashProvider 引用（用于配置切换时重新加载代理信息）
+  ClashProvider? _clashProvider;
+
+  // 自动更新定时器
+  Timer? _autoUpdateTimer;
+
+  // 启动时更新标志
+  bool _hasPerformedStartupUpdate = false;
+
+  // 获取 OverrideService
+  OverrideService get overrideService => _overrideService;
+
+  // 获取 SubscriptionService
+  SubscriptionService get service => _service;
+
+  // 订阅列表
+  List<Subscription> _subscriptions = [];
+  List<Subscription> get subscriptions => List.unmodifiable(_subscriptions);
+
+  // 当前选中的订阅 ID
+  String? _currentSubscriptionId;
+  String? get currentSubscriptionId => _currentSubscriptionId;
+
+  // 当前选中的订阅
+  Subscription? get currentSubscription {
+    if (_currentSubscriptionId == null) return null;
+    try {
+      return _subscriptions.firstWhere((s) => s.id == _currentSubscriptionId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // 状态委托给状态管理器
+  bool get isLoading => _stateManager.isLoading;
+  int get updateProgress => _stateManager.updateProgress.current;
+  int get updateTotal => _stateManager.updateProgress.total;
+  bool get isUpdating => _stateManager.updateProgress.isUpdating;
+  bool get isBatchUpdating => _stateManager.isBatchUpdating;
+  String? get errorMessage => _stateManager.errorMessage;
+
+  // 检查指定订阅是否正在更新
+  bool isSubscriptionUpdating(String subscriptionId) {
+    return _stateManager.isSubscriptionUpdating(subscriptionId);
+  }
+
+  // 构造函数（接收共享的 OverrideService 实例）
+  SubscriptionProvider(this._overrideService);
+
+  // 设置 ClashProvider 引用
+  // 用于在订阅切换时通知 ClashProvider 重新加载配置
+  void setClashProvider(ClashProvider clashProvider) {
+    _clashProvider = clashProvider;
+    Logger.debug('已设置 ClashProvider 引用到 SubscriptionProvider');
+  }
+
+  // 设置覆写获取回调
+  // 从 OverrideProvider 获取覆写配置
+  void setOverrideGetter(
+    Future<List<app_override.OverrideConfig>> Function(List<String>) getter,
+  ) {
+    _service.setOverrideGetter(getter);
+  }
+
+  // 处理当前订阅的覆写失败
+  // 当启动失败时调用，禁用当前订阅的所有覆写并记录失败ID
+  Future<void> handleOverridesFailed() async {
+    if (currentSubscription == null) {
+      Logger.warning('没有当前订阅，跳过覆写失败处理');
+      return;
+    }
+
+    final subscription = currentSubscription!;
+
+    // 如果没有覆写，直接返回
+    if (subscription.overrideIds.isEmpty) {
+      Logger.info('当前订阅没有覆写，跳过处理');
+      return;
+    }
+
+    Logger.error('覆写导致启动失败，执行回退');
+    Logger.error('订阅：${subscription.name}');
+    Logger.error('失败的覆写ID：${subscription.overrideIds}');
+
+    // 记录失败的覆写ID并清空当前覆写
+    final index = _subscriptions.indexWhere((s) => s.id == subscription.id);
+    if (index != -1) {
+      _subscriptions[index] = subscription.copyWith(
+        overrideIds: [], // 清空覆写
+        failedOverrideIds: subscription.overrideIds, // 记录失败的覆写
+      );
+
+      // 保存到持久化存储
+      await _service.saveSubscriptionList(_subscriptions);
+
+      // 通知UI更新
+      notifyListeners();
+
+      Logger.info('已禁用订阅 ${subscription.name} 的所有覆写');
+      Logger.info('失败的覆写ID已记录：${subscription.overrideIds}');
+    }
+
+    Logger.info('覆写回退完成');
+  }
+
+  // 清理订阅中无效的覆写ID引用
+  // 用于在初始化时移除已删除的覆写引用
+  Future<void> cleanupInvalidOverrideReferences(
+    Future<List<app_override.OverrideConfig>> Function(List<String>)
+    getOverrides,
+  ) async {
+    Logger.debug('开始清理订阅中的无效覆写引用...');
+
+    // 性能优化：先收集所有需要检查的覆写 ID，一次性查询
+    final allOverrideIds = <String>{};
+    for (final subscription in _subscriptions) {
+      allOverrideIds.addAll(subscription.overrideIds);
+    }
+
+    if (allOverrideIds.isEmpty) {
+      Logger.debug('没有订阅使用覆写，跳过清理');
+      return;
+    }
+
+    // 一次性查询所有覆写
+    final allExistingOverrides = await getOverrides(allOverrideIds.toList());
+    final validIdsSet = allExistingOverrides.map((o) => o.id).toSet();
+
+    Logger.debug('查询到 ${validIdsSet.length}/${allOverrideIds.length} 个有效覆写');
+
+    // 遍历订阅并更新
+    bool hasChanges = false;
+    for (int i = 0; i < _subscriptions.length; i++) {
+      final subscription = _subscriptions[i];
+      if (subscription.overrideIds.isEmpty) continue;
+
+      // 过滤出有效的 ID
+      final validIds = subscription.overrideIds
+          .where((id) => validIdsSet.contains(id))
+          .toList();
+
+      // 找出无效的ID
+      final invalidIds = subscription.overrideIds
+          .where((id) => !validIdsSet.contains(id))
+          .toList();
+
+      if (invalidIds.isNotEmpty) {
+        Logger.info(
+          '订阅 ${subscription.name} 包含 ${invalidIds.length} 个无效覆写引用: $invalidIds',
+        );
+        _subscriptions[i] = subscription.copyWith(overrideIds: validIds);
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      await _service.saveSubscriptionList(_subscriptions);
+      Logger.info('已清理订阅中的无效覆写引用');
+    } else {
+      Logger.debug('没有发现无效的覆写引用');
+    }
+  }
+
+  // 初始化 Provider
+  // baseDir 参数保留以向后兼容，但实际不再使用
+  Future<void> initialize(String baseDir) async {
+    _stateManager.setLoading(reason: '初始化订阅管理');
+    notifyListeners();
+
+    try {
+      // 初始化服务
+      await _service.initialize(baseDir);
+
+      // 初始化覆写服务（共享实例，已在 main.dart 初始化）
+      // await _overrideService.initialize(); // 不再需要这里初始化
+
+      // 将覆写服务注入到订阅服务
+      _service.setOverrideService(_overrideService);
+
+      // 设置覆写获取回调（需要从 OverrideProvider 获取）
+      // 注意：此时 OverrideProvider 可能还未初始化，所以在 main.dart 中设置
+
+      // 加载订阅列表
+      _subscriptions = await _service.loadSubscriptionList();
+
+      // 尝试恢复上次选中的订阅
+      final savedSubscriptionId = ClashPreferences.instance
+          .getCurrentSubscriptionId();
+      if (savedSubscriptionId != null &&
+          _subscriptions.any((s) => s.id == savedSubscriptionId)) {
+        _currentSubscriptionId = savedSubscriptionId;
+        Logger.info('恢复上次选中的订阅：$savedSubscriptionId');
+      } else if (_subscriptions.isNotEmpty) {
+        // 如果没有保存的订阅或保存的订阅不存在，选择第一个
+        _currentSubscriptionId = _subscriptions.first.id;
+        await ClashPreferences.instance.setCurrentSubscriptionId(
+          _currentSubscriptionId,
+        );
+        Logger.info('选择默认订阅（第一个）：$_currentSubscriptionId');
+      }
+
+      Logger.info('订阅 Provider 初始化成功，共 ${_subscriptions.length} 个订阅');
+
+      // 启动动态自动更新定时器
+      _restartAutoUpdateTimer();
+
+      _stateManager.setIdle(reason: '初始化完成');
+    } catch (e) {
+      // 初始化失败时，设置错误消息以便 UI 显示
+      final errorMsg = '初始化订阅失败: $e';
+      Logger.error(errorMsg);
+      _subscriptions = []; // 确保订阅列表为空
+      _stateManager.setError(
+        errorState: SubscriptionErrorState.initializationError,
+        errorMessage: errorMsg,
+        reason: '初始化失败',
+      );
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  // 添加订阅
+  Future<bool> addSubscription({
+    required String name,
+    required String url,
+    AutoUpdateMode autoUpdateMode = AutoUpdateMode.disabled,
+    int intervalMinutes = 60,
+    bool updateOnStartup = false,
+    bool downloadNow = true,
+    SubscriptionProxyMode proxyMode = SubscriptionProxyMode.direct,
+    String? userAgent,
+  }) async {
+    // 不清除全局错误，单个订阅操作不影响全局状态
+
+    try {
+      // URL 验证
+      if (!_isValidUrl(url)) {
+        final errorMsg = '无效的订阅链接格式';
+        Logger.error('$errorMsg：$url');
+        // 注意：不设置全局错误，只记录日志
+        return false;
+      }
+
+      // 如果未指定 userAgent，使用全局默认值
+      final effectiveUserAgent =
+          userAgent ?? ClashPreferences.instance.getDefaultUserAgent();
+
+      final subscription = Subscription(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: name,
+        url: url,
+        autoUpdateMode: autoUpdateMode,
+        intervalMinutes: intervalMinutes,
+        updateOnStartup: updateOnStartup,
+        proxyMode: proxyMode,
+        userAgent: effectiveUserAgent,
+      );
+
+      // 如果需要立即下载
+      if (downloadNow) {
+        Logger.info('立即下载新订阅：$name');
+        final updatedSubscription = await _service.downloadSubscription(
+          subscription.copyWith(isUpdating: true),
+        );
+        _subscriptions.add(updatedSubscription);
+      } else {
+        _subscriptions.add(subscription);
+      }
+
+      // 保存订阅列表
+      await _service.saveSubscriptionList(_subscriptions);
+
+      // 如果是第一个订阅，自动选中
+      if (_subscriptions.length == 1) {
+        _currentSubscriptionId = subscription.id;
+        await ClashPreferences.instance.setCurrentSubscriptionId(
+          _currentSubscriptionId,
+        );
+
+        // 如果核心正在运行（使用 default.yaml），需要应用真实配置
+        final clashProvider = _clashProvider;
+        if (clashProvider != null && clashProvider.isCoreRunning) {
+          Logger.info('首个订阅已添加，准备应用配置...');
+          final configPath = getSubscriptionConfigPath();
+          if (configPath != null) {
+            try {
+              // 订阅切换，使用热重载（避免连接中断）
+              Logger.info('订阅切换，尝试热重载配置');
+              final reloadSuccess = await clashProvider.clashManager
+                  .reloadConfig(configPath: configPath);
+
+              if (!reloadSuccess) {
+                Logger.warning('热重载失败，降级为重启核心');
+                await clashProvider.clashManager.restartToApplyConfig(
+                  reason: '首个订阅添加后热重载失败',
+                );
+              } else {
+                // 热重载成功后，从 Clash API 重新加载代理列表
+                await clashProvider.loadProxies();
+              }
+            } catch (e) {
+              Logger.error('应用配置失败：$e');
+              // 配置应用失败不影响订阅添加的成功状态
+            }
+          }
+        }
+      }
+
+      notifyListeners();
+
+      // 重新计算定时器间隔（新订阅可能启用了自动更新）
+      _restartAutoUpdateTimer();
+
+      Logger.info('添加订阅成功：$name');
+      return true;
+    } catch (e) {
+      // 不设置全局错误，只记录日志
+      Logger.error('添加订阅失败：$name - $e');
+      return false;
+    }
+  }
+
+  // 分类错误类型
+  SubscriptionUpdateErrorType _classifyError(String errorMsg) {
+    final lowerError = errorMsg.toLowerCase();
+
+    // 网络相关错误
+    if (lowerError.contains('socketexception') ||
+        lowerError.contains('failed host lookup') ||
+        lowerError.contains('network is unreachable') ||
+        lowerError.contains('no route to host')) {
+      return SubscriptionUpdateErrorType.network;
+    }
+
+    // 超时错误
+    if (lowerError.contains('timeout') || lowerError.contains('timed out')) {
+      return SubscriptionUpdateErrorType.timeout;
+    }
+
+    // HTTP 错误
+    if (lowerError.contains('http 4') || lowerError.contains('http 5')) {
+      if (lowerError.contains('404')) {
+        return SubscriptionUpdateErrorType.notFound;
+      }
+      if (lowerError.contains('403') || lowerError.contains('401')) {
+        return SubscriptionUpdateErrorType.forbidden;
+      }
+      return SubscriptionUpdateErrorType.serverError;
+    }
+
+    // 配置格式错误
+    if (lowerError.contains('配置文件') ||
+        lowerError.contains('格式') ||
+        lowerError.contains('解析') ||
+        lowerError.contains('yaml') ||
+        lowerError.contains('proxies')) {
+      return SubscriptionUpdateErrorType.formatError;
+    }
+
+    // 证书错误
+    if (lowerError.contains('certificate') ||
+        lowerError.contains('handshake')) {
+      return SubscriptionUpdateErrorType.certificate;
+    }
+
+    // 其他未知错误
+    return SubscriptionUpdateErrorType.unknown;
+  }
+
+  // 更新订阅
+  Future<bool> updateSubscription(String subscriptionId) async {
+    // 不清除全局错误，单个订阅更新不影响全局状态
+    final index = _subscriptions.indexWhere((s) => s.id == subscriptionId);
+
+    // 卫语句：检查订阅是否存在
+    if (index == -1) {
+      Logger.error('更新失败：订阅不存在 (ID：$subscriptionId)');
+      return false;
+    }
+
+    final subscription = _subscriptions[index];
+
+    try {
+      // 卫语句：本地文件不支持更新
+      if (subscription.isLocalFile) {
+        Logger.info('本地订阅无需更新：${subscription.name}');
+        _subscriptions[index] = subscription.copyWith(
+          isUpdating: false,
+          lastError: null, // 清除可能存在的旧错误
+        );
+        notifyListeners();
+        return true;
+      }
+
+      // 添加到更新中列表
+      _stateManager.addUpdatingSubscription(subscriptionId, reason: '开始更新订阅');
+
+      // 设置更新状态，并清除之前的错误
+      _subscriptions[index] = subscription.copyWith(
+        isUpdating: true,
+        lastError: null,
+      );
+      notifyListeners();
+
+      // 下载订阅
+      final updatedSubscription = await _service.downloadSubscription(
+        subscription,
+      );
+
+      // 更新列表（确保清除错误信息）
+      _subscriptions[index] = updatedSubscription.copyWith(lastError: null);
+      await _service.saveSubscriptionList(_subscriptions);
+
+      // 如果更新的是当前订阅，则重新加载配置
+      if (subscriptionId == _currentSubscriptionId) {
+        Logger.info('当前订阅已更新，开始重新加载配置...');
+        // 暂停 ConfigWatcher，避免重复触发重载
+        _clashProvider?.pauseConfigWatcher();
+        try {
+          await _reloadCurrentSubscriptionConfig(reason: '订阅更新');
+        } finally {
+          await _clashProvider?.resumeConfigWatcher();
+        }
+      }
+      Logger.info('更新订阅成功：${subscription.name}');
+
+      // 注意：不在这里重启定时器，避免批量更新时频繁重启
+      // 定时器会在 autoUpdateSubscriptions() 完成后统一重启
+
+      return true;
+    } catch (e) {
+      final rawError = e.toString();
+      Logger.error('更新订阅失败：${subscription.name} - $rawError');
+
+      // 分析错误类型并保存
+      final errorType = _classifyError(rawError);
+      Logger.info('错误类型：$errorType');
+
+      // 保存错误类型的字符串表示，供 UI 层转换为翻译文本
+      _subscriptions[index] = subscription.copyWith(
+        isUpdating: false,
+        lastError: errorType.name, // 保存枚举名称
+      );
+      await _service.saveSubscriptionList(_subscriptions);
+
+      return false;
+    } finally {
+      // 从更新中列表移除
+      _stateManager.removeUpdatingSubscription(subscriptionId, reason: '更新完成');
+      notifyListeners();
+    }
+  }
+
+  // 批量更新所有订阅
+  // 使用真正的并发更新，并提供进度通知
+  Future<List<String>> updateAllSubscriptions() async {
+    // 不清除全局错误，批量操作不影响全局状态
+    final errors = <String>[];
+
+    // 设置批量更新状态
+    _stateManager.setBatchUpdating(
+      total: _subscriptions.length,
+      reason: '开始批量更新所有订阅',
+    );
+    notifyListeners();
+
+    if (_subscriptions.isEmpty) {
+      _stateManager.setIdle(reason: '没有订阅需要更新');
+      return errors;
+    }
+
+    Logger.info('开始并发更新 ${_subscriptions.length} 个订阅');
+
+    // 使用并发限制，避免过载
+    const concurrency = ClashDefaults.subscriptionUpdateConcurrency;
+    final semaphore = _Semaphore(concurrency);
+
+    // 创建所有更新任务（真正的并发）
+    final updateFutures = _subscriptions.map((subscription) async {
+      // 获取信号量许可
+      await semaphore.acquire();
+
+      try {
+        // 跳过正在更新的订阅
+        if (_stateManager.isSubscriptionUpdating(subscription.id)) {
+          Logger.debug('跳过正在更新的订阅：${subscription.name}');
+          _stateManager.updateBatchProgress(
+            current: _stateManager.updateProgress.current + 1,
+            currentItemName: subscription.name,
+            reason: '跳过正在更新的订阅',
+          );
+          return null;
+        }
+
+        final success = await updateSubscription(subscription.id);
+
+        // 更新进度
+        _stateManager.updateBatchProgress(
+          current: _stateManager.updateProgress.current + 1,
+          currentItemName: subscription.name,
+          reason: '订阅更新完成',
+        );
+
+        Logger.debug(
+          '订阅更新进度: ${_stateManager.updateProgress.current}/${_stateManager.updateProgress.total} (${subscription.name})',
+        );
+
+        // 如果失败，从订阅对象中获取错误信息
+        if (!success) {
+          final index = _subscriptions.indexWhere(
+            (s) => s.id == subscription.id,
+          );
+          if (index != -1 && _subscriptions[index].lastError != null) {
+            return '${subscription.name}: ${_subscriptions[index].lastError}';
+          }
+          return '${subscription.name}: 更新失败';
+        }
+        return null;
+      } finally {
+        // 释放信号量
+        semaphore.release();
+      }
+    }).toList();
+
+    // 等待所有任务完成
+    final results = await Future.wait(updateFutures);
+
+    // 收集错误
+    for (final error in results) {
+      if (error != null) {
+        errors.add(error);
+      }
+    }
+
+    // 重置进度和批量更新状态
+    _stateManager.setIdle(reason: '批量更新完成');
+    notifyListeners();
+
+    Logger.info(
+      '批量更新完成: 成功=${_subscriptions.length - errors.length}, 失败=${errors.length}',
+    );
+    return errors;
+  }
+
+  // 检查是否有启用间隔更新的订阅
+  bool _hasIntervalUpdateSubscriptions() {
+    return _subscriptions.any(
+      (s) => s.autoUpdateMode == AutoUpdateMode.interval && !s.isLocalFile,
+    );
+  }
+
+  // 启动/重启自动更新定时器（固定 1 分钟检查间隔）
+  void _restartAutoUpdateTimer() {
+    // 取消现有定时器
+    _autoUpdateTimer?.cancel();
+    _autoUpdateTimer = null;
+
+    // 如果没有需要自动更新的订阅，停止定时器
+    if (!_hasIntervalUpdateSubscriptions()) {
+      Logger.info('无启用间隔更新的订阅，定时器已停止');
+      return;
+    }
+
+    // 固定每分钟检查一次（简单高效）
+    _autoUpdateTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      _checkAndAutoUpdate();
+    });
+
+    // 2 秒后立即检查一次，避免错过已过期的订阅
+    Future.delayed(const Duration(seconds: 2), () {
+      if (_autoUpdateTimer != null) {
+        _checkAndAutoUpdate();
+      }
+    });
+
+    Logger.info('自动更新定时器已启动（固定检查间隔：1 分钟）');
+  }
+
+  // 检查并执行自动更新
+  void _checkAndAutoUpdate() async {
+    // 防止重复执行
+    if (_stateManager.isAutoUpdating) {
+      Logger.debug('自动更新正在执行中，跳过本次检查');
+      return;
+    }
+
+    // 过滤出需要更新的订阅
+    final needUpdateSubscriptions = _subscriptions
+        .where((s) => s.needsUpdate)
+        .toList();
+
+    if (needUpdateSubscriptions.isEmpty) {
+      Logger.debug('定时检查：没有订阅需要更新');
+      return;
+    }
+
+    Logger.info('定时检查：发现 ${needUpdateSubscriptions.length} 个订阅需要更新');
+
+    _stateManager.setAutoUpdating(reason: '定时器触发自动更新');
+    try {
+      await autoUpdateSubscriptions();
+    } catch (e) {
+      Logger.error('自动更新订阅失败：$e');
+      _stateManager.setError(
+        errorState: SubscriptionErrorState.unknownError,
+        errorMessage: '自动更新失败: $e',
+        reason: '自动更新异常',
+      );
+    } finally {
+      _stateManager.setIdle(reason: '自动更新完成');
+    }
+  }
+
+  // 自动更新需要更新的订阅
+  // 使用并发更新以提高效率
+  Future<void> autoUpdateSubscriptions() async {
+    Logger.info('开始自动更新订阅...');
+
+    // 过滤出需要更新的订阅
+    final needUpdateSubscriptions = _subscriptions
+        .where((s) => s.needsUpdate)
+        .toList();
+
+    if (needUpdateSubscriptions.isEmpty) {
+      Logger.info('没有需要更新的订阅');
+      return;
+    }
+
+    Logger.info('发现 ${needUpdateSubscriptions.length} 个订阅需要更新');
+
+    // 使用并发更新，限制并发数
+    const concurrency = ClashDefaults.subscriptionUpdateConcurrency;
+
+    for (int i = 0; i < needUpdateSubscriptions.length; i += concurrency) {
+      final batch = needUpdateSubscriptions.skip(i).take(concurrency).toList();
+
+      // 并发更新一批订阅
+      await Future.wait(
+        batch.map((subscription) => updateSubscription(subscription.id)),
+      );
+    }
+
+    Logger.info('自动更新订阅完成');
+
+    // 批量更新完成后重新计算定时器（避免单个更新时频繁重启）
+    _restartAutoUpdateTimer();
+  }
+
+  // 执行启动时更新（确保只执行一次）
+  Future<void> performStartupUpdate() async {
+    if (_hasPerformedStartupUpdate) {
+      Logger.debug('启动时更新已执行过，跳过');
+      return;
+    }
+    _hasPerformedStartupUpdate = true;
+
+    // 找到所有启用了"启动时更新"的订阅（排除本地文件）
+    final startupUpdateSubscriptions = _subscriptions
+        .where((s) => s.updateOnStartup && !s.isLocalFile)
+        .toList();
+
+    if (startupUpdateSubscriptions.isEmpty) {
+      Logger.info('没有启用启动时更新的订阅');
+      return;
+    }
+
+    Logger.info('发现 ${startupUpdateSubscriptions.length} 个启用启动时更新的订阅');
+
+    // 使用并发更新提升性能，限制并发数为 3
+    const concurrency = 3;
+
+    for (int i = 0; i < startupUpdateSubscriptions.length; i += concurrency) {
+      final batch = startupUpdateSubscriptions.skip(i).take(concurrency);
+
+      // 并发更新一批订阅
+      final batchFutures = batch.map((subscription) async {
+        Logger.info('启动时更新订阅：${subscription.name}');
+        await updateSubscription(subscription.id);
+      });
+
+      // 等待当前批次完成后再处理下一批
+      await Future.wait(batchFutures);
+    }
+
+    Logger.info('启动时更新完成');
+  }
+
+  // 添加本地订阅
+  Future<bool> addLocalSubscription({
+    required String name,
+    required String filePath,
+    required String content,
+  }) async {
+    // 不清除全局错误，单个操作不影响全局状态
+
+    try {
+      // 创建本地订阅对象（url为空，表示本地文件）
+      final subscription =
+          Subscription.create(
+            name: name,
+            url: '', // 本地文件无URL
+          ).copyWith(
+            autoUpdateMode: AutoUpdateMode.disabled, // 本地文件不支持自动更新
+            isLocalFile: true, // 标记为本地文件
+          );
+
+      // 保存配置文件内容到订阅目录
+      await _service.saveLocalSubscription(subscription, content);
+
+      // 添加到订阅列表
+      _subscriptions.add(subscription);
+
+      // 保存订阅列表
+      await _service.saveSubscriptionList(_subscriptions);
+
+      // 如果是第一个订阅，自动选中
+      if (_subscriptions.length == 1) {
+        _currentSubscriptionId = subscription.id;
+        await ClashPreferences.instance.setCurrentSubscriptionId(
+          _currentSubscriptionId,
+        );
+
+        // 如果核心正在运行（使用 default.yaml），需要应用真实配置
+        final clashProvider = _clashProvider;
+        if (clashProvider != null && clashProvider.isCoreRunning) {
+          Logger.info('首个本地订阅已添加，准备应用配置...');
+          final configPath = getSubscriptionConfigPath();
+          if (configPath != null) {
+            try {
+              // 订阅切换，使用热重载（避免连接中断）
+              Logger.info('订阅切换，尝试热重载配置（本地订阅）');
+              final reloadSuccess = await clashProvider.clashManager
+                  .reloadConfig(configPath: configPath);
+
+              if (!reloadSuccess) {
+                Logger.warning('热重载失败，降级为重启核心');
+                await clashProvider.clashManager.restartToApplyConfig(
+                  reason: '首个本地订阅添加后热重载失败',
+                );
+              } else {
+                // 热重载成功后，从 Clash API 重新加载代理列表
+                await clashProvider.loadProxies();
+              }
+            } catch (e) {
+              Logger.error('应用配置失败：$e');
+            }
+          }
+        }
+      }
+
+      notifyListeners();
+
+      // 本地订阅不支持自动更新，但仍需重新计算定时器
+      _restartAutoUpdateTimer();
+
+      Logger.info('添加本地订阅成功：$name');
+      return true;
+    } catch (e) {
+      // 不设置全局错误，只记录日志
+      Logger.error('添加本地订阅失败：$name - $e');
+      return false;
+    }
+  }
+
+  // 删除订阅
+  Future<bool> deleteSubscription(String subscriptionId) async {
+    // 不清除全局错误，单个操作不影响全局状态
+
+    try {
+      final subscription = _subscriptions.firstWhere(
+        (s) => s.id == subscriptionId,
+      );
+
+      // 检查是否删除的是当前选中的订阅
+      final isDeletingCurrentSubscription =
+          _currentSubscriptionId == subscriptionId;
+      final wasRunning = ClashManager.instance.isCoreRunning;
+
+      // 删除配置文件
+      await _service.deleteSubscription(subscription);
+
+      // 从列表中移除
+      _subscriptions.removeWhere((s) => s.id == subscriptionId);
+
+      // 如果删除的是当前选中的订阅
+      if (isDeletingCurrentSubscription) {
+        _currentSubscriptionId = _subscriptions.isNotEmpty
+            ? _subscriptions.first.id
+            : null;
+        // 持久化保存新的订阅 ID
+        await ClashPreferences.instance.setCurrentSubscriptionId(
+          _currentSubscriptionId,
+        );
+
+        // 如果核心正在运行，热重载配置（订阅或默认配置）
+        if (wasRunning) {
+          Logger.info(
+            '删除了当前订阅，热重载${_currentSubscriptionId != null ? "新订阅配置" : "默认配置"}',
+          );
+          final clashProvider = _clashProvider;
+          if (clashProvider != null) {
+            try {
+              // 获取新的配置路径（如果有剩余订阅）或使用 null（默认配置）
+              final configPath = getSubscriptionConfigPath();
+              final reloadSuccess = await clashProvider.clashManager
+                  .reloadConfig(configPath: configPath);
+
+              if (!reloadSuccess) {
+                Logger.warning('热重载失败，降级为重启核心');
+                await ClashManager.instance.restartToApplyConfig();
+              } else {
+                // 热重载成功后，从 Clash API 重新加载代理列表
+                await clashProvider.loadProxies();
+              }
+            } catch (e) {
+              Logger.error('热重载配置失败，尝试重启核心：$e');
+              await ClashManager.instance.restartToApplyConfig();
+            }
+          }
+        }
+      }
+
+      // 保存订阅列表
+      await _service.saveSubscriptionList(_subscriptions);
+
+      notifyListeners();
+
+      // 重新计算定时器间隔（订阅减少可能影响最短间隔）
+      _restartAutoUpdateTimer();
+
+      Logger.info('删除订阅成功：${subscription.name}');
+      return true;
+    } catch (e) {
+      // 不设置全局错误，只记录日志
+      Logger.error('删除订阅失败 (ID：$subscriptionId) - $e');
+      return false;
+    }
+  }
+
+  // 重新排序订阅列表
+  Future<void> reorderSubscriptions(int oldIndex, int newIndex) async {
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+
+    final subscription = _subscriptions.removeAt(oldIndex);
+    _subscriptions.insert(newIndex, subscription);
+
+    await _service.saveSubscriptionList(_subscriptions);
+    notifyListeners();
+
+    Logger.info('订阅排序已更新：${subscription.name} 从 $oldIndex 移动到 $newIndex');
+  }
+
+  // 从所有订阅中移除指定的覆写ID引用
+  // 用于在删除覆写时清理订阅配置
+  Future<void> removeOverrideFromAllSubscriptions(String overrideId) async {
+    Logger.info('从所有订阅中移除覆写引用：$overrideId');
+
+    bool hasChanges = false;
+    for (int i = 0; i < _subscriptions.length; i++) {
+      final subscription = _subscriptions[i];
+      if (subscription.overrideIds.contains(overrideId)) {
+        Logger.debug('从订阅 ${subscription.name} 中移除覆写引用');
+        final newOverrideIds = subscription.overrideIds
+            .where((id) => id != overrideId)
+            .toList();
+        _subscriptions[i] = subscription.copyWith(overrideIds: newOverrideIds);
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      await _service.saveSubscriptionList(_subscriptions);
+      notifyListeners();
+      Logger.info('已从订阅中移除覆写引用');
+    } else {
+      Logger.debug('没有订阅使用该覆写');
+    }
+  }
+
+  // 修改订阅信息
+  Future<bool> updateSubscriptionInfo({
+    required String subscriptionId,
+    String? name,
+    String? url,
+    AutoUpdateMode? autoUpdateMode,
+    int? intervalMinutes,
+    bool? updateOnStartup,
+    SubscriptionProxyMode? proxyMode,
+    String? userAgent,
+  }) async {
+    // 不清除全局错误，单个操作不影响全局状态
+    final index = _subscriptions.indexWhere((s) => s.id == subscriptionId);
+
+    // 卫语句：检查订阅是否存在
+    if (index == -1) {
+      Logger.error('修改订阅失败：订阅不存在 (ID：$subscriptionId)');
+      return false;
+    }
+
+    try {
+      final subscription = _subscriptions[index];
+      _subscriptions[index] = subscription.copyWith(
+        name: name ?? subscription.name,
+        url: url ?? subscription.url,
+        autoUpdateMode: autoUpdateMode ?? subscription.autoUpdateMode,
+        intervalMinutes: intervalMinutes ?? subscription.intervalMinutes,
+        updateOnStartup: updateOnStartup ?? subscription.updateOnStartup,
+        proxyMode: proxyMode ?? subscription.proxyMode,
+        userAgent: userAgent ?? subscription.userAgent,
+      );
+
+      await _service.saveSubscriptionList(_subscriptions);
+      notifyListeners();
+
+      // 如果修改了自动更新配置，重新计算定时器
+      if (autoUpdateMode != null ||
+          intervalMinutes != null ||
+          updateOnStartup != null) {
+        _restartAutoUpdateTimer();
+      }
+
+      Logger.info('修改订阅信息成功：${_subscriptions[index].name}');
+      return true;
+    } catch (e) {
+      // 不设置全局错误，只记录日志
+      Logger.error('修改订阅失败 (ID：$subscriptionId) - $e');
+      return false;
+    }
+  }
+
+  // 更新订阅的覆写配置
+  Future<bool> updateSubscriptionOverrides(
+    String subscriptionId,
+    List<String> overrideIds,
+  ) async {
+    Logger.info('开始更新订阅覆写配置');
+    Logger.info('订阅 ID：$subscriptionId');
+    Logger.info('新覆写 ID 列表：$overrideIds');
+
+    final index = _subscriptions.indexWhere((s) => s.id == subscriptionId);
+
+    // 卫语句：检查订阅是否存在
+    if (index == -1) {
+      Logger.error('更新覆写配置失败：订阅不存在 (ID：$subscriptionId)');
+      return false;
+    }
+
+    try {
+      final subscription = _subscriptions[index];
+      final oldOverrideIds = subscription.overrideIds;
+
+      Logger.info('当前订阅名称：${subscription.name}');
+      Logger.info('旧覆写 ID 列表：$oldOverrideIds');
+
+      // 详细分析覆写变化
+      final added = overrideIds
+          .where((id) => !oldOverrideIds.contains(id))
+          .toList();
+      final removed = oldOverrideIds
+          .where((id) => !overrideIds.contains(id))
+          .toList();
+      final unchanged = overrideIds
+          .where((id) => oldOverrideIds.contains(id))
+          .toList();
+
+      if (added.isNotEmpty) {
+        Logger.info('新增覆写：$added');
+      }
+      if (removed.isNotEmpty) {
+        Logger.info('移除覆写：$removed');
+      }
+      if (unchanged.isNotEmpty) {
+        Logger.info('保持不变：$unchanged');
+      }
+      if (added.isEmpty && removed.isEmpty) {
+        Logger.info('覆写配置无变化');
+      }
+
+      // 更新订阅的覆写 ID 列表
+      _subscriptions[index] = subscription.copyWith(overrideIds: overrideIds);
+
+      // 保存订阅列表（覆写配置持久化）
+      await _service.saveSubscriptionList(_subscriptions);
+      notifyListeners();
+      Logger.info('覆写配置已更新并保存：${_subscriptions[index].name}');
+
+      // 如果是当前选中的订阅，重新加载配置以应用新的覆写
+      if (subscriptionId == _currentSubscriptionId) {
+        Logger.info('当前订阅的覆写已更新，重新加载配置以应用覆写...');
+        _clashProvider?.pauseConfigWatcher();
+        try {
+          await _reloadCurrentSubscriptionConfig(reason: '覆写配置更新');
+        } finally {
+          await _clashProvider?.resumeConfigWatcher();
+        }
+      } else {
+        Logger.info('覆写配置已更新，将在下次选择该订阅时生效');
+      }
+
+      Logger.info('覆写配置更新完成');
+      return true;
+    } catch (e) {
+      Logger.error('更新覆写配置失败 (ID：$subscriptionId) - $e');
+      return false;
+    }
+  }
+
+  // 保存订阅文件内容并重载配置
+  Future<bool> saveSubscriptionFile(
+    String subscriptionId,
+    String content,
+  ) async {
+    final subscription = _subscriptions.firstWhere(
+      (s) => s.id == subscriptionId,
+      orElse: () => throw Exception('订阅不存在'),
+    );
+
+    try {
+      // 保存文件到订阅目录
+      await _service.saveLocalSubscription(subscription, content);
+      Logger.info('订阅文件已保存：${subscription.name}');
+
+      // 如果是当前选中的订阅，重新加载配置
+      if (subscriptionId == _currentSubscriptionId) {
+        Logger.info('当前订阅文件已修改，重新加载配置');
+        _clashProvider?.pauseConfigWatcher();
+        try {
+          await _reloadCurrentSubscriptionConfig(reason: '订阅文件编辑');
+        } finally {
+          await _clashProvider?.resumeConfigWatcher();
+        }
+      }
+
+      return true;
+    } catch (e) {
+      Logger.error('保存订阅文件失败：${subscription.name} - $e');
+      return false;
+    }
+  }
+
+  // 选择订阅
+  Future<void> selectSubscription(String subscriptionId) async {
+    // 卫语句：检查订阅是否存在
+    if (!_subscriptions.any((s) => s.id == subscriptionId)) {
+      Logger.warning('尝试选择一个不存在的订阅：$subscriptionId');
+      return;
+    }
+
+    _currentSubscriptionId = subscriptionId;
+    // 保存选择到持久化存储
+    await ClashPreferences.instance.setCurrentSubscriptionId(subscriptionId);
+    notifyListeners();
+    Logger.info('选择订阅：$subscriptionId');
+
+    // 重新加载配置文件
+    await _reloadCurrentSubscriptionConfig(reason: '订阅切换');
+  }
+
+  // 重新加载当前订阅的配置文件
+  Future<void> _reloadCurrentSubscriptionConfig({
+    String reason = '配置重载',
+  }) async {
+    final configPath = getSubscriptionConfigPath();
+    // 卫语句：检查配置路径
+    if (configPath == null) {
+      Logger.warning('无法获取配置路径，跳过重载');
+      return;
+    }
+
+    final clashProvider = _clashProvider;
+    // 卫语句：检查 ClashProvider
+    if (clashProvider == null) {
+      Logger.warning('ClashProvider 未设置，跳过重载');
+      return;
+    }
+    Logger.info('$reason，重新加载配置文件：$configPath');
+
+    // 【性能优化】读取原始订阅文件，使用 Stopwatch 监控
+    final readStopwatch = Stopwatch()..start();
+    String? originalConfigContent;
+    try {
+      originalConfigContent = await File(configPath).readAsString();
+      readStopwatch.stop();
+      Logger.debug(
+        '读取配置文件完成: ${originalConfigContent.length} 字符 (耗时: ${readStopwatch.elapsedMilliseconds}ms)',
+      );
+    } catch (e) {
+      readStopwatch.stop();
+      Logger.error('读取配置文件失败 (耗时：${readStopwatch.elapsedMilliseconds}ms)：$e');
+      originalConfigContent = null;
+    }
+
+    // 【新架构】获取覆写列表并转换为 Rust 类型
+    List<OverrideConfig> overrides = [];
+    if (currentSubscription != null &&
+        currentSubscription!.overrideIds.isNotEmpty) {
+      try {
+        Logger.info('准备应用覆写，ID 数量：${currentSubscription!.overrideIds.length}');
+        Logger.info('覆写 ID 列表：${currentSubscription!.overrideIds}');
+
+        final appOverrides = await _service.getOverridesByIds(
+          currentSubscription!.overrideIds,
+        );
+        Logger.info('从服务获取到 ${appOverrides.length} 个覆写配置');
+
+        // 详细检查每个覆写的 content
+        for (final appOverride in appOverrides) {
+          final hasContent =
+              appOverride.content != null && appOverride.content!.isNotEmpty;
+          Logger.debug(
+            '覆写 ${appOverride.name} (${appOverride.id}): content=${hasContent ? "有内容(${appOverride.content!.length}字符)" : "无内容"}',
+          );
+        }
+
+        // 检测无效的覆写ID（文件已被删除但订阅仍引用）
+        final validOverrideIds = appOverrides.map((o) => o.id).toSet();
+        final invalidIds = currentSubscription!.overrideIds
+            .where((id) => !validOverrideIds.contains(id))
+            .toList();
+
+        if (invalidIds.isNotEmpty) {
+          Logger.warning('检测到 ${invalidIds.length} 个无效的覆写引用：$invalidIds');
+          Logger.info('自动清理无效的覆写引用…');
+
+          // 更新订阅配置，移除无效的覆写ID
+          final validIds = currentSubscription!.overrideIds
+              .where((id) => validOverrideIds.contains(id))
+              .toList();
+
+          final index = _subscriptions.indexWhere(
+            (s) => s.id == currentSubscription!.id,
+          );
+          if (index != -1) {
+            _subscriptions[index] = currentSubscription!.copyWith(
+              overrideIds: validIds,
+            );
+            await _service.saveSubscriptionList(_subscriptions);
+            notifyListeners();
+            Logger.info('已清理 ${invalidIds.length} 个无效覆写引用');
+          }
+        }
+
+        // 转换为 Rust OverrideConfig 类型（过滤掉 content 为空的覆写）
+        overrides = appOverrides
+            .where((appOverride) {
+              final hasContent =
+                  appOverride.content != null &&
+                  appOverride.content!.isNotEmpty;
+              if (!hasContent) {
+                Logger.warning(
+                  '跳过无内容的覆写: ${appOverride.name} (${appOverride.id})',
+                );
+              }
+              return hasContent;
+            })
+            .map((appOverride) {
+              Logger.debug(
+                '转换覆写到 Rust 类型: ${appOverride.name} (${appOverride.format.displayName})',
+              );
+              return OverrideConfig(
+                id: appOverride.id,
+                name: appOverride.name,
+                format: appOverride.format == app_override.OverrideFormat.yaml
+                    ? OverrideFormat.yaml
+                    : OverrideFormat.javascript,
+                content: appOverride.content!,
+              );
+            })
+            .toList();
+
+        Logger.info('成功转换 ${overrides.length} 个覆写到 Rust 类型');
+        if (overrides.isEmpty && appOverrides.isNotEmpty) {
+          Logger.warning(
+            '虽然获取到 ${appOverrides.length} 个覆写，但转换后为 0（可能 content 为空）',
+          );
+        }
+      } catch (e) {
+        Logger.error('获取/转换覆写列表失败：$e');
+      }
+    } else {
+      Logger.info('当前订阅无覆写配置');
+    }
+
+    // 如果 Clash 正在运行，尝试热重载配置
+    if (clashProvider.isCoreRunning) {
+      Logger.info('Clash 正在运行，尝试热重载配置');
+
+      // 【性能监控】记录热重载总耗时
+      final reloadStopwatch = Stopwatch()..start();
+
+      final reloadSuccess = await clashProvider.clashManager.reloadConfig(
+        configPath: configPath,
+        overrides: overrides,
+      );
+
+      reloadStopwatch.stop();
+
+      if (!reloadSuccess) {
+        Logger.warning(
+          '热重载失败 (耗时: ${reloadStopwatch.elapsedMilliseconds}ms)，降级为重启核心',
+        );
+        await clashProvider.clashManager.restartToApplyConfig(
+          reason: '$reason后热重载失败',
+        );
+      } else {
+        Logger.info('配置热重载成功 (耗时: ${reloadStopwatch.elapsedMilliseconds}ms)');
+
+        // 热重载成功后，从 Clash API 重新加载代理信息
+        final proxyLoadStopwatch = Stopwatch()..start();
+        try {
+          await clashProvider.loadProxies();
+          proxyLoadStopwatch.stop();
+          Logger.info(
+            '代理信息已从 Clash API 重新加载 (耗时: ${proxyLoadStopwatch.elapsedMilliseconds}ms)',
+          );
+        } catch (e) {
+          proxyLoadStopwatch.stop();
+          Logger.error(
+            '重新加载代理信息失败 (耗时: ${proxyLoadStopwatch.elapsedMilliseconds}ms): $e',
+          );
+        }
+      }
+    } else {
+      Logger.warning('Clash 未运行，无法重载配置');
+    }
+  }
+
+  // 获取订阅配置文件路径
+  String? getSubscriptionConfigPath() {
+    if (currentSubscription == null) {
+      return null;
+    }
+
+    // 返回当前选中订阅的配置文件路径
+    return PathService.instance.getSubscriptionConfigPath(
+      currentSubscription!.id,
+    );
+  }
+
+  // 验证配置文件是否存在
+  Future<bool> validateSubscriptionConfig() async {
+    final configPath = getSubscriptionConfigPath();
+    if (configPath == null) {
+      Logger.warning('无法验证配置文件：配置路径为空');
+      return false;
+    }
+
+    try {
+      final file = File(configPath);
+      final exists = await file.exists();
+
+      if (!exists) {
+        Logger.warning('订阅配置文件不存在：$configPath');
+      }
+
+      return exists;
+    } catch (e) {
+      Logger.error('验证配置文件失败：$e');
+      return false;
+    }
+  }
+
+  // 验证 URL 是否有效
+  bool _isValidUrl(String url) {
+    if (url.trim().isEmpty) {
+      return false;
+    }
+
+    try {
+      final uri = Uri.parse(url);
+      // 检查是否有协议（http/https）
+      if (!uri.hasScheme || (uri.scheme != 'http' && uri.scheme != 'https')) {
+        return false;
+      }
+      // 检查是否有主机名
+      if (!uri.hasAuthority || uri.host.isEmpty) {
+        return false;
+      }
+      // 检查主机名是否合法（至少包含一个点，或者是 localhost/127.0.0.1）
+      if (uri.host != 'localhost' &&
+          uri.host != '127.0.0.1' &&
+          !uri.host.contains('.')) {
+        return false;
+      }
+      return true;
+    } catch (e) {
+      Logger.error('URL 解析失败：$url - $e');
+      return false;
+    }
+  }
+
+  // 设置与覆写系统的集成（回调和清理）
+  Future<void> setupOverrideIntegration(
+    OverrideProvider overrideProvider,
+  ) async {
+    // 1. 设置覆写获取回调
+    setOverrideGetter((ids) async {
+      Logger.debug('获取覆写配置 (setOverrideGetter 回调)');
+      Logger.debug('请求的覆写 ID 列表：$ids');
+
+      final overrides = <app_override.OverrideConfig>[];
+      for (final id in ids) {
+        Logger.debug('尝试获取覆写：$id');
+        final override = overrideProvider.getOverrideById(id);
+        if (override != null) {
+          Logger.debug(
+            '找到覆写: ${override.name} (${override.format.displayName})',
+          );
+          overrides.add(override);
+        } else {
+          Logger.warning('覆写不存在：$id');
+        }
+      }
+
+      Logger.debug('共找到 ${overrides.length} 个覆写配置');
+      return overrides;
+    });
+
+    // 2. 设置覆写删除回调（清理订阅引用）
+    overrideProvider.setOnOverrideDeleted((overrideId) async {
+      Logger.debug('覆写被删除，清理订阅引用：$overrideId');
+      await removeOverrideFromAllSubscriptions(overrideId);
+    });
+
+    // 3. 清理无效的覆写引用（启动时一次性清理）
+    await cleanupInvalidOverrideReferences((ids) async {
+      final overrides = <app_override.OverrideConfig>[];
+      for (final id in ids) {
+        final override = overrideProvider.getOverrideById(id);
+        if (override != null) {
+          overrides.add(override);
+        }
+      }
+      return overrides;
+    });
+  }
+
+  @override
+  void dispose() {
+    // 取消自动更新定时器
+    _autoUpdateTimer?.cancel();
+    Logger.debug('自动更新定时器已取消');
+
+    // SubscriptionService 不再需要 dispose
+    super.dispose();
+  }
+}
+
+// 简单的信号量实现，用于限制并发数
+class _Semaphore {
+  int _currentCount;
+  final List<Completer<void>> _waitQueue = [];
+
+  _Semaphore(int maxCount) : _currentCount = maxCount;
+
+  // 获取许可（如果没有可用许可则等待）
+  Future<void> acquire() async {
+    if (_currentCount > 0) {
+      _currentCount--;
+      return;
+    }
+
+    final completer = Completer<void>();
+    _waitQueue.add(completer);
+    return completer.future;
+  }
+
+  // 释放许可
+  void release() {
+    if (_waitQueue.isNotEmpty) {
+      final completer = _waitQueue.removeAt(0);
+      completer.complete();
+    } else {
+      _currentCount++;
+    }
+  }
+}

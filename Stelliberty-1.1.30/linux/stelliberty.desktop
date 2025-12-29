@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Stelliberty
+Comment=A proxy client
+Exec=stelliberty
+Icon=app_icon
+Terminal=false
+Type=Application
+Categories=Network;Utility;
+Keywords=proxy;vpn;clash;

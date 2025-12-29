@@ -1,0 +1,203 @@
+# ============================================================
+# 杂项文件
+# ============================================================
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+**/nul
+
+# ============================================================
+# IDE 相关
+# ============================================================
+# IntelliJ IDEA
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Swift Package Manager
+.swiftpm/
+
+# ============================================================
+# Flutter/Dart/Pub 相关
+# ============================================================
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+/scripts/.dart_tool/
+**/pubspec.lock
+
+# 代码生成文件
+**/*.g.dart
+**/*.freezed.dart
+
+# Rinf 自动生成的绑定文件
+/lib/src/bindings/
+
+# Slang 自动生成的 i18n 文件（保留 locales 源文件）
+/lib/i18n/*.dart
+
+# 符号化相关
+app.*.symbols
+
+# 混淆相关
+app.*.map.json
+
+# ============================================================
+# 平台构建产物
+# ============================================================
+# Android Studio
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Windows
+*.exe
+*.pdb
+*.dll
+*.lib
+*.exp
+
+# ============================================================
+# Rust 相关
+# ============================================================
+**/target/
+**/Cargo.lock
+
+# ============================================================
+# 项目特定文件
+# ============================================================
+# Clash Core 可执行文件和数据文件（由 prebuild.dart 自动下载）
+/assets/clash-core/
+
+# Stelliberty Service 可执行文件（由 prebuild.dart 自动编译）
+/assets/service/
+
+# 托盘图标（由 prebuild.dart 自动复制）
+/assets/icons/
+/assets/*.png
+/assets/*.ico
+
+/assets/
+
+# 环境变量和配置文件
+.env
+.env.*
+.envrc
+*.env
+config.local.*
+secrets.*
+*.secret
+
+# 认证和密钥文件
+*.key
+*.pem
+*.p12
+*.pfx
+*.cer
+*.crt
+*.keystore
+*.jks
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+*.asc
+*.gpg
+
+# API 密钥和令牌
+*api_key*
+*api-key*
+*apikey*
+*token*
+*secret*
+credentials.*
+auth.*
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# 备份文件（可能包含敏感数据）
+*.backup
+*.bak
+*.old
+*.orig
+*.tmp
+*~
+*.swp
+*.swo
+
+# 用户数据和缓存
+user_data/
+cache/
+*.cache
+.cache/
+
+# 日志文件（可能包含敏感信息）
+*.log
+logs/
+*.log.*
+
+# 配置文件的本地副本
+*-local.*
+*.local
+local_config.*
+
+# macOS 特定
+.Spotlight-V100
+.Trashes
+.fseventsd
+.TemporaryItems
+.DocumentRevisions-V100
+*.photoslibrary
+
+# Windows 特定
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# 个人笔记和文档
+TODO.txt
+NOTES.txt
+notes/
+personal/
+private/
+
+# 调试和分析文件
+*.dmp
+*.stackdump
+core
+core.*
+*.trace
+
+# 临时上传文件
+uploads/
+temp/
+tmp/
+
+

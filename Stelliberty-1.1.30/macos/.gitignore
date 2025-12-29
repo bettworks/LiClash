@@ -1,0 +1,28 @@
+# Flutter/Dart/Pub related
+**/Flutter/ephemeral/
+**/Pods/
+
+# Xcode-related
+**/dgph
+**/xcuserdata/
+
+# Build directories
+build/
+DerivedData/
+
+# CocoaPods
+Podfile.lock
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Compiled executables
+*.app
+*.dSYM.zip
+*.dSYM
+

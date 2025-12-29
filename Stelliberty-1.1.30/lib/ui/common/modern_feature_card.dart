@@ -1,0 +1,362 @@
+import 'package:flutter/material.dart';
+import 'package:stelliberty/ui/common/modern_switch.dart';
+
+// 一个通用的、带动画和描边效果的现代特性卡片容器。
+//
+// 当被选中时，会显示不同的背景色、描边和阴影，并支持禁用悬停和点击效果。
+class ModernFeatureCard extends StatelessWidget {
+  // 卡片内部的子组件。
+  final Widget child;
+
+  // 卡片是否处于选中状态。
+  final bool isSelected;
+
+  // 点击卡片时的回调函数。
+  final VoidCallback onTap;
+
+  // 卡片的圆角半径。
+  final double borderRadius;
+
+  // 是否启用悬停效果。
+  final bool enableHover;
+
+  // 是否启用点击效果（包括水波纹和 onTap 回调）。
+  final bool enableTap;
+
+  const ModernFeatureCard({
+    super.key,
+    required this.child,
+    required this.isSelected,
+    required this.onTap,
+    this.borderRadius = 8.0,
+    this.enableHover = true,
+    this.enableTap = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        color: isSelected
+            ? Theme.of(context).colorScheme.primary.withAlpha(38)
+            : Theme.of(context).colorScheme.surface.withAlpha(153),
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary.withAlpha(150)
+              : Theme.of(context).colorScheme.outline.withAlpha(80),
+          width: 2,
+        ),
+        boxShadow: [
+          if (isSelected)
+            BoxShadow(
+              color: Theme.of(context).colorScheme.primary.withAlpha(51),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+        ],
+      ),
+      child: enableTap
+          ? Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(borderRadius),
+                onTap: onTap,
+                hoverColor: enableHover
+                    ? Theme.of(context).colorScheme.primary.withAlpha(20)
+                    : Colors.transparent,
+                child: child,
+              ),
+            )
+          : child,
+    );
+  }
+}
+
+// 统一布局的现代特性卡片组件
+//
+// 提供一致的布局：图标 + 标题/描述 + 右侧控件
+class ModernFeatureLayoutCard extends StatelessWidget {
+  // 左侧图标
+  final IconData icon;
+
+  // 标题文本
+  final String title;
+
+  // 描述文本（可选）
+  final String? subtitle;
+
+  // 右侧控件
+  final Widget? trailing;
+
+  // 卡片内边距
+  final EdgeInsets? padding;
+
+  // 图标大小
+  final double? iconSize;
+
+  // 图标颜色
+  final Color? iconColor;
+
+  // 是否启用悬停效果
+  final bool enableHover;
+
+  // 是否启用点击效果
+  final bool enableTap;
+
+  // 点击事件
+  final VoidCallback? onTap;
+
+  const ModernFeatureLayoutCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.padding,
+    this.iconSize,
+    this.iconColor,
+    this.enableHover = true,
+    this.enableTap = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ModernFeatureCard(
+      isSelected: false,
+      onTap: onTap ?? () {},
+      enableHover: enableHover,
+      enableTap: enableTap,
+      child: Padding(
+        padding:
+            padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Row(
+          children: [
+            // 左侧图标
+            Icon(icon, size: iconSize ?? 24, color: iconColor),
+            const SizedBox(width: 12),
+
+            // 标题和描述
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleMedium),
+                  if (subtitle != null)
+                    Text(
+                      subtitle!,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
+            ),
+
+            // 右侧控件
+            if (trailing != null) trailing!,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// 可展开的现代特性卡片组件
+//
+// 自动管理展开/折叠状态
+class ModernFeatureExpandableCard extends StatefulWidget {
+  // 左侧图标
+  final IconData icon;
+
+  // 标题文本
+  final String title;
+
+  // 描述文本（可选）
+  final String? subtitle;
+
+  // 展开内容构建器
+  final Widget Function(BuildContext context) expandedContentBuilder;
+
+  // 首次展开时的回调（用于延迟加载配置）
+  final VoidCallback? onFirstExpand;
+
+  // 卡片内边距
+  final EdgeInsets? padding;
+
+  // 图标大小
+  final double? iconSize;
+
+  // 图标颜色
+  final Color? iconColor;
+
+  const ModernFeatureExpandableCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.expandedContentBuilder,
+    this.onFirstExpand,
+    this.padding,
+    this.iconSize,
+    this.iconColor,
+  });
+
+  @override
+  State<ModernFeatureExpandableCard> createState() =>
+      _ModernFeatureExpandableCardState();
+}
+
+class _ModernFeatureExpandableCardState
+    extends State<ModernFeatureExpandableCard> {
+  bool _isExpanded = false;
+  bool _hasExpanded = false;
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded && !_hasExpanded) {
+        _hasExpanded = true;
+        widget.onFirstExpand?.call();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ModernFeatureCard(
+      isSelected: false,
+      onTap: () {},
+      enableHover: false,
+      enableTap: false,
+      child: Padding(
+        padding:
+            widget.padding ??
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 标题行
+            Row(
+              children: [
+                Icon(
+                  widget.icon,
+                  size: widget.iconSize ?? 24,
+                  color: widget.iconColor,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      if (widget.subtitle != null)
+                        Text(
+                          widget.subtitle!,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 0),
+                  child: IconButton(
+                    icon: Icon(
+                      _isExpanded ? Icons.expand_less : Icons.expand_more,
+                    ),
+                    onPressed: _toggleExpanded,
+                  ),
+                ),
+              ],
+            ),
+
+            // 展开内容
+            if (_isExpanded) ...[
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 16),
+              widget.expandedContentBuilder(context),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// 简单的切换现代特性卡片组件
+//
+// 仅包含图标、标题、描述和开关
+class ModernFeatureToggleCard extends StatelessWidget {
+  // 左侧图标
+  final IconData icon;
+
+  // 标题文本
+  final String title;
+
+  // 描述文本
+  final String subtitle;
+
+  // 开关状态
+  final bool value;
+
+  // 开关状态变化回调
+  final ValueChanged<bool> onChanged;
+
+  // 卡片内边距
+  final EdgeInsets? padding;
+
+  const ModernFeatureToggleCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+    this.padding,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ModernFeatureCard(
+      isSelected: false,
+      onTap: () {},
+      enableHover: true,
+      enableTap: false,
+      child: Padding(
+        padding:
+            padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // 左侧图标和标题
+            Row(
+              children: [
+                Icon(icon),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            // 右侧开关
+            ModernSwitch(value: value, onChanged: onChanged),
+          ],
+        ),
+      ),
+    );
+  }
+}

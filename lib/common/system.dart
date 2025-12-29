@@ -44,6 +44,16 @@ class System {
   Future<bool> checkIsAdmin() async {
     final corePath = appPath.corePath.replaceAll(' ', '\\\\ ');
     if (system.isWindows) {
+      // 优先使用 net session 检查（更直接可靠）
+      try {
+        final result = await Process.run('net', ['session'], runInShell: true);
+        if (result.exitCode == 0) {
+          return true;
+        }
+      } catch (_) {
+        // net session 失败，回退到服务检查
+      }
+      // 备用方案：检查Helper服务状态
       final result = await windows?.checkService();
       return result == WindowsHelperServiceStatus.running;
     } else if (system.isMacOS) {
@@ -259,21 +269,27 @@ class Windows {
     final taskXml = '''
 <?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.3" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>LiClash开机自启动（管理员模式）</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <LogonTrigger>
+      <Enabled>true</Enabled>
+      <Delay>PT5S</Delay>
+    </LogonTrigger>
+  </Triggers>
   <Principals>
     <Principal id="Author">
       <LogonType>InteractiveToken</LogonType>
       <RunLevel>HighestAvailable</RunLevel>
     </Principal>
   </Principals>
-  <Triggers>
-    <LogonTrigger/>
-  </Triggers>
   <Settings>
-    <MultipleInstancesPolicy>Parallel</MultipleInstancesPolicy>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
     <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
     <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
-    <AllowHardTerminate>false</AllowHardTerminate>
-    <StartWhenAvailable>false</StartWhenAvailable>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
     <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
     <IdleSettings>
       <StopOnIdleEnd>false</StopOnIdleEnd>
@@ -284,12 +300,13 @@ class Windows {
     <Hidden>false</Hidden>
     <RunOnlyIfIdle>false</RunOnlyIfIdle>
     <WakeToRun>false</WakeToRun>
-    <ExecutionTimeLimit>PT72H</ExecutionTimeLimit>
-    <Priority>7</Priority>
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+    <Priority>4</Priority>
   </Settings>
   <Actions Context="Author">
     <Exec>
       <Command>"${Platform.resolvedExecutable}"</Command>
+      <Arguments>--silent-start</Arguments>
     </Exec>
   </Actions>
 </Task>''';
@@ -309,6 +326,20 @@ class Windows {
       'schtasks',
       commandLine.replaceFirst('%s', taskPath),
     );
+  }
+
+  Future<bool> deleteTask(String appName) async {
+    final command = '/delete /tn $appName /f';
+    return runas('schtasks', command);
+  }
+
+  Future<bool> isTaskExists(String appName) async {
+    try {
+      final result = await Process.run('schtasks', ['/query', '/tn', appName]);
+      return result.exitCode == 0;
+    } catch (_) {
+      return false;
+    }
   }
 }
 
