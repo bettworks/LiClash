@@ -271,8 +271,8 @@ class Windows {
     }
     
     // 超时后仍检查一次服务状态
-    final status = await checkService();
-    return status == WindowsHelperServiceStatus.running;
+    final finalStatus = await checkService();
+    return finalStatus == WindowsHelperServiceStatus.running;
   }
 
   Future<bool> registerTask(String appName) async {
