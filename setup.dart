@@ -196,13 +196,13 @@ class Build {
     if (exitCode != 0 && name != null) throw '$name error';
   }
 
-  static Future<String> calcMd5(String filePath) async {
+  static Future<String> calcSha256(String filePath) async {
     final file = File(filePath);
     if (!await file.exists()) {
       throw 'File not exists';
     }
     final stream = file.openRead();
-    return md5.convert(await stream.reduce((a, b) => a + b)).toString();
+    return sha256.convert(await stream.reduce((a, b) => a + b)).toString();
   }
 
   static Future<List<String>> buildCore({
@@ -500,7 +500,7 @@ class BuildCommand extends Command {
     switch (target) {
       case Target.windows:
         final token = target != Target.android
-            ? await Build.calcMd5(corePaths.first)
+            ? await Build.calcSha256(corePaths.first)
             : null;
         Build.buildHelper(target, token!);
         _buildDistributor(
