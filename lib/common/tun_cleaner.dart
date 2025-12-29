@@ -70,14 +70,15 @@ class TunCleaner {
     }
 
     try {
-      // 使用 PowerShell 命令字符串，避免 $false 被解释为 Dart 字符串插值
-      final command = 'Remove-NetAdapter -Name "$adapterName" -Confirm:\\\$false';
-      final finalCommand = command.replaceAll(r'$adapterName', adapterName);
+      // 使用 PowerShell 命令字符串，正确转义适配器名称和 $false
+      // 适配器名称需要单引号包裹，避免特殊字符问题
+      final escapedName = adapterName.replaceAll("'", "''"); // 转义单引号
+      final command = "Remove-NetAdapter -Name '$escapedName' -Confirm:\\\$false";
       final result = await Process.run(
         'powershell',
         [
           '-Command',
-          finalCommand,
+          command,
         ],
         runInShell: true,
       );

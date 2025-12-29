@@ -133,13 +133,19 @@ class PortManager {
           // 提取 PID（最后一列）
           final parts = line.trim().split(RegExp(r'\s+'));
           if (parts.isNotEmpty) {
-            final pid = parts.last;
+            final pidStr = parts.last;
+            // 验证 PID 是否为数字
+            final pid = int.tryParse(pidStr);
+            if (pid == null) {
+              commonPrint.log('无效的 PID: $pidStr');
+              continue;
+            }
             commonPrint.log('发现占用端口 $port 的进程 PID=$pid，正在终止…');
 
             // 使用 taskkill 终止进程
             final killResult = await Process.run(
               'taskkill',
-              ['/F', '/PID', pid],
+              ['/F', '/PID', pid.toString()],
               runInShell: true,
             );
             if (killResult.exitCode == 0) {

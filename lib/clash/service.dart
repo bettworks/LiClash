@@ -136,7 +136,11 @@ class ClashService extends ClashHandlerInterface {
     _heartbeatTimer = Timer.periodic(
       const Duration(seconds: 30),
       (_) async {
-        await request.sendHeartbeat();
+        try {
+          await request.sendHeartbeat();
+        } catch (e) {
+          commonPrint.log('发送心跳失败: $e');
+        }
       },
     );
   }

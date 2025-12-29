@@ -25,7 +25,9 @@ use winapi::um::winnt::{
 #[cfg(windows)]
 use winapi::um::winuser::SW_HIDE;
 
+#[cfg(not(windows))]
 use std::io::BufRead;
+#[cfg(not(windows))]
 use std::process::{Child, Command, Stdio};
 
 pub struct ProcessHandle {
@@ -183,11 +185,13 @@ impl ProcessHandle {
     #[cfg(windows)]
     pub fn wait(&mut self) -> Result<(), String> {
         unsafe {
+            // 先等待进程退出
             if !self.process_handle.is_null() {
                 winapi::um::synchapi::WaitForSingleObject(self.process_handle, u32::MAX);
                 CloseHandle(self.process_handle);
                 self.process_handle = ptr::null_mut();
             }
+            // 然后关闭 Job Object（如果还没关闭）
             if !self.job_handle.is_null() {
                 CloseHandle(self.job_handle);
                 self.job_handle = ptr::null_mut();
@@ -216,7 +220,9 @@ impl ProcessHandle {
 
 impl Drop for ProcessHandle {
     fn drop(&mut self) {
+        // 确保进程被终止
         let _ = self.kill();
+        // wait() 在 kill() 之后可能失败（因为 handle 已关闭），这是预期的
         let _ = self.wait();
     }
 }

@@ -3,15 +3,13 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::VecDeque;
 use std::fs::File;
-use std::io::{BufRead, Error, Read};
+use std::io::{Error, Read};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use std::{io, thread};
 use tokio::sync::RwLock;
 use warp::{Filter, Reply};
 
-mod process;
-use process::ProcessHandle;
+use crate::service::process::ProcessHandle;
 
 const LISTEN_PORT: u16 = 47890;
 const HEARTBEAT_TIMEOUT: Duration = Duration::from_secs(65);
@@ -56,8 +54,9 @@ fn start(start_params: StartParams) -> impl Reply {
     stop();
     
     // 重置心跳时间
-    tokio::spawn(async {
-        *LAST_HEARTBEAT.write().await = Instant::now();
+    let last_heartbeat = Arc::clone(&LAST_HEARTBEAT);
+    tokio::spawn(async move {
+        *last_heartbeat.write().await = Instant::now();
     });
     
     let mut process = PROCESS.lock().unwrap();
@@ -69,8 +68,8 @@ fn start(start_params: StartParams) -> impl Reply {
                 // 非Windows平台：尝试获取stderr
                 let mut handle_mut = handle;
                 if let Some(mut stderr) = handle_mut.stderr() {
-                    let stderr_handle = Arc::clone(&LOGS);
-                    thread::spawn(move || {
+                    let stderr_handle: Arc<Mutex<VecDeque<String>>> = Arc::clone(&LOGS);
+                    std::thread::spawn(move || {
                         for line in stderr.lines() {
                             match line {
                                 Ok(output) => {
@@ -97,8 +96,9 @@ fn start(start_params: StartParams) -> impl Reply {
             "".to_string()
         }
         Err(e) => {
-            log_message(e.clone());
-            e
+            let error_msg: String = e.clone();
+            log_message(error_msg.clone());
+            error_msg
         }
     }
 }
@@ -106,16 +106,20 @@ fn start(start_params: StartParams) -> impl Reply {
 fn stop() -> impl Reply {
     let mut process = PROCESS.lock().unwrap();
     if let Some(mut handle) = process.take() {
-        let _ = handle.kill();
-        let _ = handle.wait();
+        // 先终止进程，然后等待退出
+        // 注意：kill() 会关闭 handle，所以 wait() 需要在 kill() 之前或使用不同的方式
+        let _: Result<(), String> = handle.kill();
+        // wait() 在 kill() 之后可能失败（因为 handle 已关闭），这是预期的
+        let _: Result<(), String> = handle.wait();
     }
     *process = None;
     "".to_string()
 }
 
 fn heartbeat() -> impl Reply {
-    tokio::spawn(async {
-        *LAST_HEARTBEAT.write().await = Instant::now();
+    let last_heartbeat = Arc::clone(&LAST_HEARTBEAT);
+    tokio::spawn(async move {
+        *last_heartbeat.write().await = Instant::now();
     });
     "".to_string()
 }
@@ -141,8 +145,8 @@ fn get_logs() -> impl Reply {
 pub async fn run_service() -> anyhow::Result<()> {
     // 启动心跳监控器
     let heartbeat_monitor = {
-        let process_handle = Arc::clone(&PROCESS);
-        let last_heartbeat = Arc::clone(&LAST_HEARTBEAT);
+        let process_handle: Arc<Mutex<Option<ProcessHandle>>> = Arc::clone(&PROCESS);
+        let last_heartbeat: Arc<RwLock<Instant>> = Arc::clone(&LAST_HEARTBEAT);
         tokio::spawn(async move {
             let mut last_check_time = Instant::now();
             loop {
@@ -172,12 +176,14 @@ pub async fn run_service() -> anyhow::Result<()> {
                     // 只停止 Clash 核心，不关闭服务
                     let mut process = process_handle.lock().unwrap();
                     if let Some(mut handle) = process.take() {
+                        // 终止进程
                         if let Err(e) = handle.kill() {
                             log::error!("心跳超时停止 Clash 失败: {}", e);
                         } else {
                             log::info!("心跳超时，Clash 核心已停止，等待主程序重连");
                         }
-                        let _ = handle.wait();
+                        // wait() 在 kill() 之后可能失败（因为 handle 已关闭），这是预期的
+                        let _: Result<(), String> = handle.wait();
                     }
 
                     // 重置心跳时间，避免反复触发
@@ -207,7 +213,7 @@ pub async fn run_service() -> anyhow::Result<()> {
     tokio::select! {
         result = warp::serve(api_ping.or(api_heartbeat).or(api_start).or(api_stop).or(api_logs))
             .run(([127, 0, 0, 1], LISTEN_PORT)) => {
-            result
+            result.map_err(|e| anyhow::anyhow!("Warp server error: {}", e))
         }
         _ = heartbeat_monitor => {
             Ok(())
