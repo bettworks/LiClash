@@ -129,7 +129,9 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
       }
     });
     ref.listenManual(currentNavigationItemsStateProvider, (prev, next) {
-      if (prev?.value.length != next.value.length) {
+      if (prev?.value.length != next.value.length ||
+          prev?.value.map((e) => e.label).join(',') !=
+              next.value.map((e) => e.label).join(',')) {
         _updatePageController();
       }
     });
@@ -137,9 +139,11 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
 
   int get _pageIndex {
     final navigationItems = ref.read(currentNavigationItemsStateProvider).value;
-    return navigationItems.indexWhere(
+    final index = navigationItems.indexWhere(
       (item) => item.label == globalState.appState.pageLabel,
     );
+    // 如果当前页面不在导航项中，返回 0（第一个页面）
+    return index == -1 ? 0 : index;
   }
 
   Future<void> _toPage(PageLabel pageLabel,
@@ -148,26 +152,104 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
       return;
     }
     final navigationItems = ref.read(currentNavigationItemsStateProvider).value;
-    final index = navigationItems.indexWhere((item) => item.label == pageLabel);
-    if (index == -1) {
+    if (navigationItems.isEmpty) {
       return;
     }
+    final index = navigationItems.indexWhere((item) => item.label == pageLabel);
+    // 确保索引在有效范围内
+    final validIndex = index == -1 
+        ? 0 
+        : index.clamp(0, navigationItems.length - 1);
     final isAnimateToPage = ref.read(appSettingProvider).isAnimateToPage;
     final isMobile = ref.read(isMobileViewProvider);
+    
+    if (index == -1) {
+      // 如果目标页面不存在（例如关闭日志捕获时尝试切换到 logs 页面），
+      // 保持当前页面不变，或者如果当前页面也不存在，则切换到第一个可用页面
+      final currentPageLabel = globalState.appState.pageLabel;
+      final currentIndex = navigationItems.indexWhere(
+        (item) => item.label == currentPageLabel,
+      );
+      
+      if (currentIndex != -1) {
+        // 当前页面仍然存在，保持当前页面，不进行任何跳转
+        return;
+      }
+      
+      // 当前页面也不存在，切换到第一个可用页面
+      final fallbackLabel = navigationItems[0].label;
+      if (globalState.appState.pageLabel != fallbackLabel) {
+        globalState.appState = globalState.appState.copyWith(
+          pageLabel: fallbackLabel,
+        );
+      }
+      // 直接跳转到第一个页面
+      if (_pageController.hasClients) {
+        if (isAnimateToPage && !ignoreAnimateTo && isMobile) {
+          await _pageController.animateToPage(
+            validIndex,
+            duration: kTabScrollDuration,
+            curve: Curves.easeOut,
+          );
+        } else {
+          _pageController.jumpToPage(validIndex);
+        }
+      }
+      return;
+    }
+    if (!_pageController.hasClients) {
+      return;
+    }
     if (isAnimateToPage && isMobile && !ignoreAnimateTo) {
       await _pageController.animateToPage(
-        index,
+        validIndex,
         duration: kTabScrollDuration,
         curve: Curves.easeOut,
       );
     } else {
-      _pageController.jumpToPage(index);
+      _pageController.jumpToPage(validIndex);
     }
   }
 
   void _updatePageController() {
+    if (!mounted) {
+      return;
+    }
+    final navigationItems = ref.read(currentNavigationItemsStateProvider).value;
+    if (navigationItems.isEmpty) {
+      return;
+    }
     final pageLabel = globalState.appState.pageLabel;
-    _toPage(pageLabel, true);
+    final index = navigationItems.indexWhere((item) => item.label == pageLabel);
+    
+    if (index == -1) {
+      // 当前页面不在导航项中（例如关闭日志捕获时在 logs 页面），切换到第一个可用页面
+      final fallbackLabel = navigationItems[0].label;
+      globalState.appState = globalState.appState.copyWith(
+        pageLabel: fallbackLabel,
+      );
+      // 使用 postFrameCallback 确保在下一帧执行，避免在 build 过程中修改状态
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _toPage(fallbackLabel, true);
+        }
+      });
+    } else {
+      // 当前页面仍然存在，保持当前页面，只需要确保 PageController 的索引正确
+      final validIndex = index.clamp(0, navigationItems.length - 1);
+      if (_pageController.hasClients) {
+        final currentPage = _pageController.page?.round() ?? 0;
+        // 只有当当前页面索引与目标索引不一致时，才进行跳转
+        if (currentPage != validIndex) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _pageController.hasClients) {
+              _pageController.jumpToPage(validIndex);
+            }
+          });
+        }
+        // 如果索引已经正确，不需要任何操作，保持当前页面显示
+      }
+    }
   }
 
   @override
