@@ -300,7 +300,7 @@ class AppSidebarContainer extends ConsumerWidget {
         } else {
           // 解锁窗口：恢复默认的最小大小，移除最大大小限制，允许调整大小
           await windowManager.setMinimumSize(const Size(380, 400));
-          await windowManager.setMaximumSize(null);
+          await windowManager.setMaximumSize(const Size(double.infinity, double.infinity));
           await windowManager.setResizable(true);
         }
       },
