@@ -258,39 +258,7 @@ class AppSidebarContainer extends ConsumerWidget {
                   const SizedBox(
                     height: 16,
                   ),
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final isLocked = ref.watch(
-                        windowSettingProvider.select((state) => state.isLocked),
-                      );
-                      return IconButton(
-                        onPressed: () async {
-                          if (window == null) return;
-                          
-                          try {
-                            final newLocked = !isLocked;
-                            
-                            // 更新状态
-                            ref.read(windowSettingProvider.notifier).updateState(
-                                  (state) => state.copyWith(
-                                    isLocked: newLocked,
-                                  ),
-                                );
-                            
-                            // 设置窗口是否可调整大小
-                            await windowManager.setResizable(!newLocked);
-                          } catch (e) {
-                            commonPrint.log('窗口锁定操作失败: $e');
-                          }
-                        },
-                        icon: Icon(
-                          isLocked ? Icons.lock : Icons.lock_open,
-                          color: context.colorScheme.onSurfaceVariant,
-                        ),
-                        tooltip: isLocked ? '解锁窗口大小' : '锁定窗口大小',
-                      );
-                    },
-                  ),
+                  if (window != null) const WindowLockButton(),
                   const SizedBox(
                     height: 16,
                   ),
@@ -307,6 +275,45 @@ class AppSidebarContainer extends ConsumerWidget {
           ),
         )
       ],
+    );
+  }
+}
+
+class WindowLockButton extends ConsumerWidget {
+  const WindowLockButton({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLocked = ref.watch(
+      windowSettingProvider.select((state) => state.isLocked),
+    );
+
+    return IconButton(
+      onPressed: () async {
+        try {
+          final currentLocked = ref.read(
+            windowSettingProvider.select((state) => state.isLocked),
+          );
+          final newLocked = !currentLocked;
+
+          // 先设置窗口
+          await windowManager.setResizable(!newLocked);
+
+          // 再更新状态
+          ref.read(windowSettingProvider.notifier).updateState(
+                (state) => state.copyWith(
+                  isLocked: newLocked,
+                ),
+              );
+        } catch (e) {
+          commonPrint.log('窗口锁定操作失败: $e');
+        }
+      },
+      icon: Icon(
+        isLocked ? Icons.lock : Icons.lock_open,
+        color: context.colorScheme.onSurfaceVariant,
+      ),
+      tooltip: isLocked ? '解锁窗口大小' : '锁定窗口大小',
     );
   }
 }
