@@ -313,7 +313,6 @@ class WindowLockButton extends ConsumerWidget {
         isLocked ? Icons.lock : Icons.lock_open,
         color: context.colorScheme.onSurfaceVariant,
       ),
-      tooltip: isLocked ? '解锁窗口大小' : '锁定窗口大小',
     );
   }
 }
