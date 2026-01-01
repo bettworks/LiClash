@@ -75,7 +75,7 @@ class IcmpForwardingItem extends ConsumerWidget {
 **arb/intl_en.arb**:
 ```json
 "icmpForwarding": "ICMP Forwarding",
-"icmpForwardingDesc": "Enable ICMPing support",
+"icmpForwardingDesc": "Enable ICMPing Support",
 ```
 
 **lib/l10n/l10n.dart**:
@@ -85,7 +85,7 @@ String get icmpForwarding {
 }
 
 String get icmpForwardingDesc {
-  return Intl.message('Enable ICMPing support', name: 'icmpForwardingDesc', desc: '', args: []);
+  return Intl.message('Enable ICMPing Support', name: 'icmpForwardingDesc', desc: '', args: []);
 }
 ```
 
@@ -186,7 +186,7 @@ class UpdateParams with _$UpdateParams {
 1. **UI 显示**
    - [ ] ICMP转发选项显示在栈模式上方
    - [ ] 标题显示"ICMP转发"（中文）/"ICMP Forwarding"（英文）
-   - [ ] 描述显示"开启后将支持ICMP Ping"（中文）/"Enable ICMPing support"（英文）
+   - [ ] 描述显示"开启后将支持ICMP Ping"（中文）/"Enable ICMPing Support"（英文）
 
 2. **功能测试**
    - [ ] 默认状态：开关关闭（对应 `disable-icmp-forwarding=true`）

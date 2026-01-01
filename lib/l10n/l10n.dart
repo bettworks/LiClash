@@ -2350,9 +2350,9 @@ class AppLocalizations {
     return Intl.message('ICMP Forwarding', name: 'icmpForwarding', desc: '', args: []);
   }
 
-  /// `Enable ICMPing support`
+  /// `Enable ICMPing Support`
   String get icmpForwardingDesc {
-    return Intl.message('Enable ICMPing support', name: 'icmpForwardingDesc', desc: '', args: []);
+    return Intl.message('Enable ICMPing Support', name: 'icmpForwardingDesc', desc: '', args: []);
   }
 
   /// `Network`
