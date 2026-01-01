@@ -1845,21 +1845,6 @@ class AppLocalizations {
     return Intl.message('Service ready', name: 'serviceReady', desc: '', args: []);
   }
 
-  /// `Loading service`
-  String get loadingService {
-    return Intl.message('Loading service', name: 'loadingService', desc: '', args: []);
-  }
-
-  /// `Security verification`
-  String get securityVerification {
-    return Intl.message('Security verification', name: 'securityVerification', desc: '', args: []);
-  }
-
-  /// `Starting`
-  String get starting {
-    return Intl.message('Starting', name: 'starting', desc: '', args: []);
-  }
-
   /// `Processing app related settings`
   String get appDesc {
     return Intl.message(

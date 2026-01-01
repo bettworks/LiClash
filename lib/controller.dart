@@ -86,14 +86,8 @@ class AppController {
 
   Future<void> updateStatus(bool isStart) async {
     if (isStart) {
-      // 开始启动，显示加载状态
-      _ref.read(startingStatusProvider.notifier).startLoading();
-      
       // 快速启动路径：立即启动核心服务
       await _fastStart();
-      
-      // 启动完成，清除加载状态
-      _ref.read(startingStatusProvider.notifier).complete();
       
       // 后台异步加载其他数据
       _backgroundLoad();

@@ -163,6 +163,7 @@ class WindowHeader extends StatefulWidget {
 class _WindowHeaderState extends State<WindowHeader> {
   final isMaximizedNotifier = ValueNotifier<bool>(false);
   final isPinNotifier = ValueNotifier<bool>(false);
+  final isHoveringNotifier = ValueNotifier<bool>(false); // 新增：鼠标悬停状态
 
   @override
   void initState() {
@@ -179,6 +180,7 @@ class _WindowHeaderState extends State<WindowHeader> {
   void dispose() {
     isMaximizedNotifier.dispose();
     isPinNotifier.dispose();
+    isHoveringNotifier.dispose(); // 新增：释放资源
     super.dispose();
   }
 
@@ -202,59 +204,72 @@ class _WindowHeaderState extends State<WindowHeader> {
   }
 
   Widget _buildActions() {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () async {
-            _updatePin();
-          },
-          icon: ValueListenableBuilder(
-            valueListenable: isPinNotifier,
-            builder: (_, value, ___) {
-              return value
-                  ? const Icon(
-                      Icons.push_pin,
-                    )
-                  : const Icon(
-                      Icons.push_pin_outlined,
-                    );
-            },
-          ),
-        ),
-        IconButton(
-          onPressed: () {
-            windowManager.minimize();
-          },
-          icon: const Icon(Icons.remove),
-        ),
-        IconButton(
-          onPressed: () async {
-            _updateMaximized();
-          },
-          icon: ValueListenableBuilder(
-            valueListenable: isMaximizedNotifier,
-            builder: (_, value, ___) {
-              return value
-                  ? const Icon(
-                      Icons.filter_none,
-                      size: 20,
-                    )
-                  : const Icon(
-                      Icons.crop_square,
-                    );
-            },
-          ),
-        ),
-        IconButton(
-          onPressed: () {
-            globalState.appController.handleBackOrExit();
-          },
-          icon: const Icon(Icons.close),
-        ),
-        // const SizedBox(
-        //   width: 8,
-        // ),
-      ],
+    // 只在 Windows 和 Linux 上应用悬停效果
+    final shouldUseHoverEffect = system.isWindows || system.isLinux;
+    
+    return MouseRegion(
+      onEnter: shouldUseHoverEffect ? (_) => isHoveringNotifier.value = true : null,
+      onExit: shouldUseHoverEffect ? (_) => isHoveringNotifier.value = false : null,
+      child: ValueListenableBuilder<bool>(
+        valueListenable: isHoveringNotifier,
+        builder: (_, isHovering, __) {
+          final showButtons = !shouldUseHoverEffect || isHovering;
+          return Visibility(
+            visible: showButtons,
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () async {
+                    _updatePin();
+                  },
+                  icon: ValueListenableBuilder(
+                    valueListenable: isPinNotifier,
+                    builder: (_, value, ___) {
+                      return value
+                          ? const Icon(
+                              Icons.push_pin,
+                            )
+                          : const Icon(
+                              Icons.push_pin_outlined,
+                            );
+                    },
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    windowManager.minimize();
+                  },
+                  icon: const Icon(Icons.remove),
+                ),
+                IconButton(
+                  onPressed: () async {
+                    _updateMaximized();
+                  },
+                  icon: ValueListenableBuilder(
+                    valueListenable: isMaximizedNotifier,
+                    builder: (_, value, ___) {
+                      return value
+                          ? const Icon(
+                              Icons.filter_none,
+                              size: 20,
+                            )
+                          : const Icon(
+                              Icons.crop_square,
+                            );
+                    },
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    globalState.appController.handleBackOrExit();
+                  },
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
