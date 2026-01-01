@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:li_clash/common/common.dart';
 import 'package:li_clash/enum/enum.dart';
 import 'package:li_clash/models/models.dart';
@@ -257,12 +259,6 @@ class StartingStatus extends _$StartingStatus with AutoDisposeNotifierMixin {
     _timer?.cancel();
     _timer = null;
     state = null;
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
   }
 }
 

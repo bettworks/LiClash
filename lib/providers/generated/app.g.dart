@@ -219,7 +219,7 @@ final runTimeProvider = AutoDisposeNotifierProvider<RunTime, int?>.internal(
 );
 
 typedef _$RunTime = AutoDisposeNotifier<int?>;
-String _$startingStatusHash() => r'977cdd2748eb8d494638bbe414ebcc60617207ef';
+String _$startingStatusHash() => r'd87b6b0c83c17243501c01925ad0b367290fa97b';
 
 /// See also [StartingStatus].
 @ProviderFor(StartingStatus)
