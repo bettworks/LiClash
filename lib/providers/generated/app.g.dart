@@ -219,6 +219,22 @@ final runTimeProvider = AutoDisposeNotifierProvider<RunTime, int?>.internal(
 );
 
 typedef _$RunTime = AutoDisposeNotifier<int?>;
+String _$startingStatusHash() => r'977cdd2748eb8d494638bbe414ebcc60617207ef';
+
+/// See also [StartingStatus].
+@ProviderFor(StartingStatus)
+final startingStatusProvider =
+    AutoDisposeNotifierProvider<StartingStatus, String?>.internal(
+  StartingStatus.new,
+  name: r'startingStatusProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$startingStatusHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$StartingStatus = AutoDisposeNotifier<String?>;
 String _$viewSizeHash() => r'07f9cce28a69d1496ba4643ef72a739312f6fc28';
 
 /// See also [ViewSize].

@@ -24,6 +24,7 @@ class TUNButton extends StatelessWidget {
                     items: [
                       if (system.isDesktop) const TUNItem(),
                       if (system.isMacOS) const AutoSetSystemDnsItem(),
+                      const IcmpForwardingItem(),
                       const TunStackItem(),
                     ],
                   ),

@@ -199,6 +199,74 @@ class RunTime extends _$RunTime with AutoDisposeNotifierMixin {
 }
 
 @riverpod
+class StartingStatus extends _$StartingStatus with AutoDisposeNotifierMixin {
+  Timer? _timer;
+  int _phase = 0; // 0: 服务加载, 1: 安全验证, 2: 正在启动
+  
+  @override
+  String? build() {
+    return null; // null 表示未启动或已完成
+  }
+
+  void startLoading() {
+    _phase = 0;
+    _updateStatus();
+    
+    // 1秒后开始显示加载状态
+    _timer = Timer(const Duration(seconds: 1), () {
+      if (state != null) {
+        _showLoadingPhases();
+      }
+    });
+  }
+
+  void _showLoadingPhases() {
+    // 服务加载... (3秒)
+    _phase = 0;
+    _updateStatus();
+    
+    _timer = Timer(const Duration(seconds: 3), () {
+      if (state != null) {
+        // 安全验证... (3秒)
+        _phase = 1;
+        _updateStatus();
+        
+        _timer = Timer(const Duration(seconds: 3), () {
+          if (state != null) {
+            // 正在启动...
+            _phase = 2;
+            _updateStatus();
+          }
+        });
+      }
+    });
+  }
+
+  void _updateStatus() {
+    switch (_phase) {
+      case 0:
+        state = 'loadingService';
+      case 1:
+        state = 'securityVerification';
+      case 2:
+        state = 'starting';
+    }
+  }
+
+  void complete() {
+    _timer?.cancel();
+    _timer = null;
+    state = null;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+}
+
+@riverpod
 class ViewSize extends _$ViewSize with AutoDisposeNotifierMixin {
   @override
   Size build() {

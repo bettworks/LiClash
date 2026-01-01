@@ -65,6 +65,39 @@ class IcmpForwardingItem extends ConsumerWidget {
 ),
 ```
 
+添加到小部件的虚拟网卡弹窗（栈模式上方）：
+```dart
+// lib/views/dashboard/widgets/quick_options.dart
+class TUNButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return CommonCard(
+      onPressed: () {
+        showSheet(
+          context: context,
+          builder: (_, type) {
+            return AdaptiveSheetScaffold(
+              body: generateListView(
+                generateSection(
+                  items: [
+                    if (system.isDesktop) const TUNItem(),
+                    if (system.isMacOS) const AutoSetSystemDnsItem(),
+                    const IcmpForwardingItem(),  // 新增
+                    const TunStackItem(),
+                  ],
+                ),
+              ),
+              title: appLocalizations.tun,
+            );
+          },
+        );
+      },
+      // ...
+    );
+  }
+}
+```
+
 #### 国际化文件
 
 **arb/intl_zh_CN.arb**:
@@ -99,7 +132,7 @@ String get icmpForwardingDesc {
 ### 3. 配置传递流程
 
 ```
-用户操作 UI
+用户操作 UI（设置页面或小部件）
     ↓
 IcmpForwardingItem.onChanged(value)
     ↓
@@ -107,13 +140,9 @@ patchClashConfigProvider.updateState()
     ↓
 state.copyWith.tun(disableIcmpForwarding: !value)
     ↓
-updateParamsProvider 检测到变化 (自动监听)
+立即调用 updateClashConfig() (显示进度条)
     ↓
-ClashManager 监听器触发
-    ↓
-updateClashConfigDebounce() (防抖)
-    ↓
-updateClashConfig()
+_updateClashConfig()
     ↓
 clashCore.updateConfig(UpdateParams)
     ↓
@@ -133,59 +162,35 @@ Tun 对象序列化为 JSON
 内核应用配置
 ```
 
-### 3.1 自动重载机制
+### 3.1 为什么使用直接调用而不是自动监听
 
-系统使用 Riverpod 的自动监听机制来处理配置重载：
+虽然系统有自动监听机制（`updateParamsProvider` → `updateClashConfigDebounce()`），但对于需要立即生效的配置，直接调用更合适：
 
-**lib/providers/state.dart**:
+**自动监听机制**：
+- 使用防抖（debounce），延迟执行
+- 没有进度条提示
+- 适合批量配置变更
+
+**直接调用**：
+- 立即执行，显示进度条
+- 用户体验更好，有明确的反馈
+- 与 TUN 开关、栈模式等行为一致
+
+**实现对比**：
+
 ```dart
-@riverpod
-UpdateParams updateParams(Ref ref) {
-  final routeMode = ref.watch(
-    networkSettingProvider.select(
-      (state) => state.routeMode,
-    ),
-  );
-  return ref.watch(
-    patchClashConfigProvider.select(
-      (state) => UpdateParams(
-        tun: state.tun.getRealTun(routeMode),  // 包含 disableIcmpForwarding
-        allowLan: state.allowLan,
-        findProcessMode: state.findProcessMode,
-        mode: state.mode,
-        logLevel: state.logLevel,
-        ipv6: state.ipv6,
-        tcpConcurrent: state.tcpConcurrent,
-        externalController: state.externalController,
-        unifiedDelay: state.unifiedDelay,
-        mixedPort: state.mixedPort,
-      ),
-    ),
-  );
+// ❌ 自动监听（防抖，无进度条）
+onChanged: (value) {
+  ref.read(patchClashConfigProvider.notifier).updateState(...);
+  // updateParamsProvider 自动触发 updateClashConfigDebounce()
+}
+
+// ✅ 直接调用（立即执行，有进度条）
+onChanged: (value) async {
+  ref.read(patchClashConfigProvider.notifier).updateState(...);
+  await globalState.appController.updateClashConfig();
 }
 ```
-
-**lib/manager/clash_manager.dart**:
-```dart
-ref.listenManual(updateParamsProvider, (prev, next) {
-  if (prev != next) {
-    globalState.appController.updateClashConfigDebounce();
-  }
-});
-```
-
-**工作原理**：
-1. `updateParamsProvider` 监听 `patchClashConfigProvider` 的变化
-2. 当 `tun.disableIcmpForwarding` 变化时，`UpdateParams` 对象也会变化（因为 `Tun` 是 freezed 类，自动实现了正确的 `==` 比较）
-3. `ClashManager` 的监听器检测到 `updateParamsProvider` 变化
-4. 触发 `updateClashConfigDebounce()`，使用防抖机制避免频繁调用
-5. 最终调用 `updateClashConfig()` 重载配置
-
-**优势**：
-- 无需手动调用 `updateClashConfig()`
-- 与其他配置项（如 TUN、栈模式等）行为一致
-- 使用防抖机制，避免频繁重载
-- 避免手动调用和自动触发的竞态条件
 
 ### 4. 数据模型
 
@@ -245,15 +250,17 @@ class UpdateParams with _$UpdateParams {
 ## 测试要点
 
 1. **UI 显示**
-   - [ ] ICMP转发选项显示在栈模式上方
+   - [ ] ICMP转发选项显示在栈模式上方（设置页面）
+   - [ ] ICMP转发选项显示在栈模式上方（小部件弹窗）
    - [ ] 标题显示"ICMP转发"（中文）/"ICMP Forwarding"（英文）
    - [ ] 描述显示"开启后将支持ICMPing"（中文）/"Enable ICMPing Support"（英文）
 
 2. **功能测试**
    - [ ] 默认状态：开关关闭（对应 `disable-icmp-forwarding=true`）
-   - [ ] 开启开关后，配置中 `disable-icmp-forwarding` 变为 `false`
-   - [ ] 关闭开关后，配置中 `disable-icmp-forwarding` 变为 `true`
-   - [ ] 配置变化后自动应用到内核
+   - [ ] 开启开关后，显示进度条，配置中 `disable-icmp-forwarding` 变为 `false`
+   - [ ] 关闭开关后，显示进度条，配置中 `disable-icmp-forwarding` 变为 `true`
+   - [ ] 配置变化后立即生效（有进度条提示）
+   - [ ] 小部件和设置页面行为一致
 
 3. **持久化测试**
    - [ ] 修改设置后重启应用，设置保持
@@ -275,11 +282,13 @@ class UpdateParams with _$UpdateParams {
 
 ## 修复记录
 
-### 2025-01-01: 修复 ICMP 转发开关配置重载机制
-- **问题**：用户切换 ICMP 转发开关后，配置没有正确 reload
-- **原因**：手动调用 `updateClashConfig()` 与自动监听机制产生冲突
-- **解决方案**：移除手动调用，依赖系统自动监听机制
-  - `updateParamsProvider` 监听 `patchClashConfigProvider` 变化
-  - `ClashManager` 监听 `updateParamsProvider` 变化并触发 `updateClashConfigDebounce()`
-  - 使用防抖机制避免频繁调用
-- **影响**：现在切换开关后，配置会通过自动机制正确重载，与其他配置项行为一致
+### 2025-01-01: 修复 ICMP 转发开关配置重载
+- **问题1**：ICMP 转发开关变更后没有显示进度条，配置重载不明显
+- **原因**：使用了防抖机制 `updateClashConfigDebounce()`，导致延迟执行且没有进度提示
+- **解决方案**：直接调用 `updateClashConfig()` 立即重载配置并显示进度条
+- **问题2**：小部件里的虚拟网卡弹窗缺少 ICMP 转发开关
+- **解决方案**：在 TUNButton 弹窗中添加 IcmpForwardingItem，位置在栈模式上方
+- **影响**：
+  - 用户切换 ICMP 开关后会立即看到进度条提示
+  - 配置立即生效，与其他开关（如 TUN、栈模式）行为一致
+  - 小部件和设置页面功能保持一致
