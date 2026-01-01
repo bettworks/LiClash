@@ -146,7 +146,7 @@ class AppController {
     // 如果配置没有变化，跳过重新应用
     if (currentLastModified != null && 
         lastProfileModified != null &&
-        currentLastModified <= lastProfileModified) {
+        currentLastModified <= (lastProfileModified ?? 0)) {
       return false;
     }
     
@@ -633,9 +633,6 @@ class AppController {
     };
     updateTray(true);
     
-    // 迁移设备名称（如果需要）
-    await _migrateDeviceName();
-    
     await _initCore();
     await _initStatus();
     autoLaunch?.updateStatus(
@@ -664,42 +661,6 @@ class AppController {
     await _handlePreference();
     await _handlerDisclaimer();
     _ref.read(initProvider.notifier).value = true;
-  }
-
-  /// 迁移设备名称：确保 TUN 设备名称为最新值（只执行一次）
-  Future<void> _migrateDeviceName() async {
-    try {
-      // 检查是否已经迁移过
-      final appSetting = _ref.read(appSettingProvider);
-      if (appSetting.deviceNameMigrated) {
-        return; // 已经迁移过，跳过
-      }
-      
-      final currentDeviceName = _ref.read(patchClashConfigProvider).tun.device;
-      
-      // 如果设备名称不是预期值，进行迁移
-      if (currentDeviceName != tunDeviceName) {
-        commonPrint.log('Migrating TUN device name from "$currentDeviceName" to "$tunDeviceName"');
-        
-        _ref.read(patchClashConfigProvider.notifier).updateState(
-          (state) => state.copyWith.tun(
-            device: tunDeviceName,
-          ),
-        );
-        
-        commonPrint.log('TUN device name migration completed');
-      }
-      
-      // 标记为已迁移，无论是否实际执行了迁移
-      _ref.read(appSettingProvider.notifier).updateState(
-        (state) => state.copyWith(deviceNameMigrated: true),
-      );
-      
-      // 保存配置
-      await savePreferences();
-    } catch (e) {
-      commonPrint.log('Failed to migrate device name: $e');
-    }
   }
 
   Future<void> _initStatus() async {

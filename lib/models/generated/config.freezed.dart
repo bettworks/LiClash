@@ -39,7 +39,6 @@ mixin _$AppSettingProps {
   bool get hidden => throw _privateConstructorUsedError;
   bool get developerMode => throw _privateConstructorUsedError;
   RecoveryStrategy get recoveryStrategy => throw _privateConstructorUsedError;
-  bool get deviceNameMigrated => throw _privateConstructorUsedError;
 
   /// Serializes this AppSettingProps to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -75,8 +74,7 @@ abstract class $AppSettingPropsCopyWith<$Res> {
       bool minimizeOnExit,
       bool hidden,
       bool developerMode,
-      RecoveryStrategy recoveryStrategy,
-      bool deviceNameMigrated});
+      RecoveryStrategy recoveryStrategy});
 }
 
 /// @nodoc
@@ -111,7 +109,6 @@ class _$AppSettingPropsCopyWithImpl<$Res, $Val extends AppSettingProps>
     Object? hidden = null,
     Object? developerMode = null,
     Object? recoveryStrategy = null,
-    Object? deviceNameMigrated = null,
   }) {
     return _then(_value.copyWith(
       locale: freezed == locale
@@ -182,10 +179,6 @@ class _$AppSettingPropsCopyWithImpl<$Res, $Val extends AppSettingProps>
           ? _value.recoveryStrategy
           : recoveryStrategy // ignore: cast_nullable_to_non_nullable
               as RecoveryStrategy,
-      deviceNameMigrated: null == deviceNameMigrated
-          ? _value.deviceNameMigrated
-          : deviceNameMigrated // ignore: cast_nullable_to_non_nullable
-              as bool,
     ) as $Val);
   }
 }
@@ -216,8 +209,7 @@ abstract class _$$AppSettingPropsImplCopyWith<$Res>
       bool minimizeOnExit,
       bool hidden,
       bool developerMode,
-      RecoveryStrategy recoveryStrategy,
-      bool deviceNameMigrated});
+      RecoveryStrategy recoveryStrategy});
 }
 
 /// @nodoc
@@ -250,7 +242,6 @@ class __$$AppSettingPropsImplCopyWithImpl<$Res>
     Object? hidden = null,
     Object? developerMode = null,
     Object? recoveryStrategy = null,
-    Object? deviceNameMigrated = null,
   }) {
     return _then(_$AppSettingPropsImpl(
       locale: freezed == locale
@@ -321,10 +312,6 @@ class __$$AppSettingPropsImplCopyWithImpl<$Res>
           ? _value.recoveryStrategy
           : recoveryStrategy // ignore: cast_nullable_to_non_nullable
               as RecoveryStrategy,
-      deviceNameMigrated: null == deviceNameMigrated
-          ? _value.deviceNameMigrated
-          : deviceNameMigrated // ignore: cast_nullable_to_non_nullable
-              as bool,
     ));
   }
 }
@@ -350,8 +337,7 @@ class _$AppSettingPropsImpl implements _AppSettingProps {
       this.minimizeOnExit = true,
       this.hidden = false,
       this.developerMode = false,
-      this.recoveryStrategy = RecoveryStrategy.compatible,
-      this.deviceNameMigrated = false})
+      this.recoveryStrategy = RecoveryStrategy.compatible})
       : _dashboardWidgets = dashboardWidgets;
 
   factory _$AppSettingPropsImpl.fromJson(Map<String, dynamic> json) =>
@@ -414,13 +400,10 @@ class _$AppSettingPropsImpl implements _AppSettingProps {
   @override
   @JsonKey()
   final RecoveryStrategy recoveryStrategy;
-  @override
-  @JsonKey()
-  final bool deviceNameMigrated;
 
   @override
   String toString() {
-    return 'AppSettingProps(locale: $locale, dashboardWidgets: $dashboardWidgets, onlyStatisticsProxy: $onlyStatisticsProxy, autoLaunch: $autoLaunch, silentLaunch: $silentLaunch, autoRun: $autoRun, openLogs: $openLogs, closeConnections: $closeConnections, testUrl: $testUrl, isAnimateToPage: $isAnimateToPage, autoCheckUpdate: $autoCheckUpdate, showLabel: $showLabel, disclaimerAccepted: $disclaimerAccepted, minimizeOnExit: $minimizeOnExit, hidden: $hidden, developerMode: $developerMode, recoveryStrategy: $recoveryStrategy, deviceNameMigrated: $deviceNameMigrated)';
+    return 'AppSettingProps(locale: $locale, dashboardWidgets: $dashboardWidgets, onlyStatisticsProxy: $onlyStatisticsProxy, autoLaunch: $autoLaunch, silentLaunch: $silentLaunch, autoRun: $autoRun, openLogs: $openLogs, closeConnections: $closeConnections, testUrl: $testUrl, isAnimateToPage: $isAnimateToPage, autoCheckUpdate: $autoCheckUpdate, showLabel: $showLabel, disclaimerAccepted: $disclaimerAccepted, minimizeOnExit: $minimizeOnExit, hidden: $hidden, developerMode: $developerMode, recoveryStrategy: $recoveryStrategy)';
   }
 
   @override
@@ -457,9 +440,7 @@ class _$AppSettingPropsImpl implements _AppSettingProps {
             (identical(other.developerMode, developerMode) ||
                 other.developerMode == developerMode) &&
             (identical(other.recoveryStrategy, recoveryStrategy) ||
-                other.recoveryStrategy == recoveryStrategy) &&
-            (identical(other.deviceNameMigrated, deviceNameMigrated) ||
-                other.deviceNameMigrated == deviceNameMigrated));
+                other.recoveryStrategy == recoveryStrategy));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -482,8 +463,7 @@ class _$AppSettingPropsImpl implements _AppSettingProps {
       minimizeOnExit,
       hidden,
       developerMode,
-      recoveryStrategy,
-      deviceNameMigrated);
+      recoveryStrategy);
 
   /// Create a copy of AppSettingProps
   /// with the given fields replaced by the non-null parameter values.
@@ -521,8 +501,7 @@ abstract class _AppSettingProps implements AppSettingProps {
       final bool minimizeOnExit,
       final bool hidden,
       final bool developerMode,
-      final RecoveryStrategy recoveryStrategy,
-      final bool deviceNameMigrated}) = _$AppSettingPropsImpl;
+      final RecoveryStrategy recoveryStrategy}) = _$AppSettingPropsImpl;
 
   factory _AppSettingProps.fromJson(Map<String, dynamic> json) =
       _$AppSettingPropsImpl.fromJson;
@@ -562,8 +541,6 @@ abstract class _AppSettingProps implements AppSettingProps {
   bool get developerMode;
   @override
   RecoveryStrategy get recoveryStrategy;
-  @override
-  bool get deviceNameMigrated;
 
   /// Create a copy of AppSettingProps
   /// with the given fields replaced by the non-null parameter values.

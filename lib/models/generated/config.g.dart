@@ -30,7 +30,6 @@ _$AppSettingPropsImpl _$$AppSettingPropsImplFromJson(
       recoveryStrategy: $enumDecodeNullable(
               _$RecoveryStrategyEnumMap, json['recoveryStrategy']) ??
           RecoveryStrategy.compatible,
-      deviceNameMigrated: json['deviceNameMigrated'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$AppSettingPropsImplToJson(
@@ -55,7 +54,6 @@ Map<String, dynamic> _$$AppSettingPropsImplToJson(
       'hidden': instance.hidden,
       'developerMode': instance.developerMode,
       'recoveryStrategy': _$RecoveryStrategyEnumMap[instance.recoveryStrategy]!,
-      'deviceNameMigrated': instance.deviceNameMigrated,
     };
 
 const _$RecoveryStrategyEnumMap = {
