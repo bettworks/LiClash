@@ -649,7 +649,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "specialRules": MessageLookupByLibrary.simpleMessage("special rules"),
     "stackMode": MessageLookupByLibrary.simpleMessage("Stack mode"),
     "icmpForwarding": MessageLookupByLibrary.simpleMessage("ICMP Forwarding"),
-    "icmpForwardingDesc": MessageLookupByLibrary.simpleMessage("Enable ICMP Ping support"),
+    "icmpForwardingDesc": MessageLookupByLibrary.simpleMessage("Enable ICMPing support"),
     "standard": MessageLookupByLibrary.simpleMessage("Standard"),
     "start": MessageLookupByLibrary.simpleMessage("Start"),
     "startVpn": MessageLookupByLibrary.simpleMessage("Starting VPN..."),

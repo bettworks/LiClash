@@ -307,7 +307,7 @@
   "noIcon": "None",
   "stackMode": "Stack mode",
   "icmpForwarding": "ICMP Forwarding",
-  "icmpForwardingDesc": "Enable ICMP Ping support",
+  "icmpForwardingDesc": "Enable ICMPing support",
   "network": "Network",
   "networkDesc": "Modify network-related settings",
   "bypassDomain": "Bypass domain",

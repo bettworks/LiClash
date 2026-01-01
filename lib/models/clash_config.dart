@@ -149,7 +149,7 @@ class Sniffer with _$Sniffer {
     @Default([]) @JsonKey(name: 'force-domain') List<String> forceDomain,
     @Default([]) @JsonKey(name: 'skip-src-address') List<String> skipSrcAddress,
     @Default([]) @JsonKey(name: 'skip-dst-address') List<String> skipDstAddress,
-    @Default([]) @JsonKey(name: 'skip-domain') List<String> skipDomain,
+    @Default(['mijia cloud']) @JsonKey(name: 'skip-domain') List<String> skipDomain,
     @Default([]) @JsonKey(name: 'port-whitelist') List<String> port,
     @Default(true) @JsonKey(name: 'force-dns-mapping') bool forceDnsMapping,
     @Default(true) @JsonKey(name: 'parse-pure-ip') bool parsePureIp,
@@ -179,7 +179,7 @@ class SnifferConfig with _$SnifferConfig {
 class Tun with _$Tun {
   const factory Tun({
     @Default(false) bool enable,
-    @Default(appName) String device,
+    @Default(tunDeviceName) String device,
     @JsonKey(name: 'auto-route') @Default(false) bool autoRoute,
     @Default(TunStack.system) TunStack stack,
     @JsonKey(name: 'dns-hijack') @Default(['any:53']) List<String> dnsHijack,
