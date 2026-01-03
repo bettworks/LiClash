@@ -90,7 +90,8 @@ class AppController {
       await _fastStart();
       
       // 后台异步加载其他数据
-      _backgroundLoad();
+      // 注意：对于桌面 TUN 模式，_fastStart 内部会延迟调用 _backgroundLoad
+      // 以避免与 TUN 配置更新产生竞态条件
     } else {
       await globalState.handleStop();
       clashCore.resetTraffic();
@@ -118,12 +119,15 @@ class AppController {
         updateTraffic,
       ]);
       
-      // 3. 延迟开启TUN
+      // 3. 延迟开启TUN，并在TUN开启完成后再加载后台数据
+      // 避免与配置更新产生竞态导致代理页面闪烁
       Future.microtask(() async {
         final res = await _requestAdmin(true);
         if (!res.isError) {
            await _updateClashConfig();
         }
+        // TUN 配置完成后再加载后台数据
+        _backgroundLoad();
       });
       
       addCheckIpNumDebounce();
@@ -143,6 +147,9 @@ class AppController {
     }
     
     addCheckIpNumDebounce();
+    
+    // 非 TUN 模式或移动端，立即加载后台数据
+    _backgroundLoad();
   }
 
   /// 后台加载：异步执行非关键操作

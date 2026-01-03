@@ -269,13 +269,14 @@ class _WindowHeaderState extends State<WindowHeader> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () async {
-                      // 失去焦点，防止搜索框拦截关闭操作
+                    onPressed: () {
+                      // 清除焦点（例如搜索框）
                       FocusManager.instance.primaryFocus?.unfocus();
-                      // 保持按钮可见直到窗口关闭完成
+                      // 强制解除退出阻塞状态（可能由搜索框等触发）
+                      globalState.appController.unBackBlock();
+                      // 保持按钮可见状态直到窗口关闭
                       isHoveringNotifier.value = true;
-                      // 直接关闭窗口，系统会触发 onWindowClose 回调进行后续处理
-                      await windowManager.close();
+                      globalState.appController.handleBackOrExit();
                     },
                     icon: const Icon(Icons.close),
                   ),
