@@ -58,10 +58,12 @@ class AutoLaunch {
       return;
     }
     if (await isEnable == isAutoLaunch) return;
+    
+    // 异步执行，避免阻塞 UI
     if (isAutoLaunch == true) {
-      enable();
+      unawaited(enable());
     } else {
-      disable();
+      unawaited(disable());
     }
   }
 }

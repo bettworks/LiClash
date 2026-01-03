@@ -209,7 +209,14 @@ class _WindowHeaderState extends State<WindowHeader> {
     
     return MouseRegion(
       onEnter: shouldUseHoverEffect ? (_) => isHoveringNotifier.value = true : null,
-      onExit: shouldUseHoverEffect ? (_) => isHoveringNotifier.value = false : null,
+      onExit: shouldUseHoverEffect ? (_) {
+        // 延迟设置，避免点击时立即隐藏按钮
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            isHoveringNotifier.value = false;
+          }
+        });
+      } : null,
       child: ValueListenableBuilder<bool>(
         valueListenable: isHoveringNotifier,
         builder: (_, isHovering, __) {
@@ -265,6 +272,8 @@ class _WindowHeaderState extends State<WindowHeader> {
                     onPressed: () {
                       // Unfocus any focused widget (like search fields) before closing
                       FocusManager.instance.primaryFocus?.unfocus();
+                      // 保持按钮可见状态直到窗口关闭
+                      isHoveringNotifier.value = true;
                       globalState.appController.handleBackOrExit();
                     },
                     icon: const Icon(Icons.close),
