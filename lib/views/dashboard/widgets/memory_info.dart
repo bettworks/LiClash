@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:fl_clash/clash/clash.dart';
-import 'package:fl_clash/common/common.dart';
-import 'package:fl_clash/models/common.dart';
-import 'package:fl_clash/state.dart';
-import 'package:fl_clash/widgets/widgets.dart';
+import 'package:li_clash/clash/clash.dart';
+import 'package:li_clash/common/common.dart';
+import 'package:li_clash/models/common.dart';
+import 'package:li_clash/state.dart';
+import 'package:li_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 
 final _memoryInfoStateNotifier = ValueNotifier<TrafficValue>(
@@ -36,9 +36,9 @@ class _MemoryInfoState extends State<MemoryInfo> {
 
   Future<void> _updateMemory() async {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final rss = ProcessInfo.currentRss;
+      // final rss = ProcessInfo.currentRss;
       _memoryInfoStateNotifier.value = TrafficValue(
-        value: clashLib != null ? rss : await clashCore.getMemory() + rss,
+        value: await clashCore.getMemory(),
       );
       timer = Timer(Duration(seconds: 2), () async {
         _updateMemory();
