@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:li_clash/common/common.dart';
 import 'package:li_clash/enum/enum.dart';
 import 'package:li_clash/models/models.dart';
@@ -17,70 +15,9 @@ class StartButton extends ConsumerStatefulWidget {
 }
 
 class _StartButtonState extends ConsumerState<StartButton> {
-  Timer? _timer;
-  String? _statusText;
-  int _seconds = 0;
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _startTimer() {
-    _timer?.cancel();
-    _seconds = 0;
-
-    if (system.isAndroid) return;
-
-    // Set first status immediately
-    _statusText = appLocalizations.waitMoment;
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      _seconds++;
-
-      String? newText;
-      // Faster transitions to ensure visibility even on relatively quick startups
-      if (_seconds < 2) {
-        newText = appLocalizations.waitMoment;
-      } else if (_seconds < 4) {
-        newText = appLocalizations.checkingService;
-      } else if (_seconds < 6) {
-        newText = appLocalizations.asyncLoading;
-      } else if (_seconds < 8) {
-        newText = appLocalizations.quickConfig;
-      } else {
-        newText = appLocalizations.safeStartup;
-      }
-
-      if (newText != _statusText) {
-        setState(() {
-          _statusText = newText;
-        });
-      }
-    });
-  }
-
   void _handleStart() {
     final isStart = ref.read(runTimeProvider) != null;
     final newState = !isStart;
-
-    if (newState) {
-      setState(() {
-        _startTimer();
-      });
-    } else {
-      _timer?.cancel();
-      if (_statusText != null) {
-        setState(() {
-          _statusText = null;
-        });
-      }
-    }
 
     debouncer.call(
       FunctionTag.updateStatus,
@@ -93,18 +30,6 @@ class _StartButtonState extends ConsumerState<StartButton> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(runTimeProvider, (previous, next) {
-      if (next != null) {
-        if (_timer != null || _statusText != null) {
-          _timer?.cancel();
-          _timer = null;
-          setState(() {
-            _statusText = null;
-          });
-        }
-      }
-    });
-
     final state = ref.watch(startButtonSelectorStateProvider);
     final runTime = ref.watch(runTimeProvider);
     final isStart = runTime != null;
@@ -115,7 +40,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
         info: Info(
           label: isStart
               ? appLocalizations.runTime
-              : (_statusText ?? appLocalizations.powerSwitch),
+              : appLocalizations.powerSwitch,
           iconData: Icons.power_settings_new,
         ),
         onPressed: state.isInit && state.hasProfile ? _handleStart : null,

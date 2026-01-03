@@ -177,12 +177,14 @@ class Request {
 
   Future<bool> startCoreByHelper(String arg) async {
     try {
+      final homeDirPath = await appPath.homeDirPath;
       final response = await _dio
           .post(
             'http://$localhost:$helperPort/start',
             data: json.encode({
               'path': appPath.corePath,
               'arg': arg,
+              'home_dir': homeDirPath,
             }),
             options: Options(
               responseType: ResponseType.plain,

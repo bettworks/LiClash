@@ -5,14 +5,14 @@
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_follow_clash_core_Core_startTun(JNIEnv *env, jobject, const jint fd, jobject cb) {
+Java_com_appshub_liclash_core_Core_startTun(JNIEnv *env, jobject, const jint fd, jobject cb) {
     const auto interface = new_global(cb);
     startTUN(fd, interface);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_follow_clash_core_Core_stopTun(JNIEnv *) {
+Java_com_appshub_liclash_core_Core_stopTun(JNIEnv *) {
     stopTun();
 }
 

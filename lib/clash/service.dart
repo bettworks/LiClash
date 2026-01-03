@@ -105,11 +105,17 @@ class ClashService extends ClashHandlerInterface {
     }
 
     // 非 Windows 平台，或 Helper 启动失败时的回退方案：直接启动核心进程
+    // 设置 SAFE_PATHS 环境变量，将应用数据目录添加到安全路径列表
+    final homeDirPath = await appPath.homeDirPath;
+    final environment = Map<String, String>.from(Platform.environment);
+    environment['SAFE_PATHS'] = homeDirPath;
+    
     process = await Process.start(
       appPath.corePath,
       [
         arg,
       ],
+      environment: environment,
     );
     process?.stdout.listen((_) {});
     process?.stderr.listen((e) {

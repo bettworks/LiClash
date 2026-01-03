@@ -2,11 +2,11 @@ package statistic
 
 import (
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/metacubex/mihomo/common/atomic"
 	"github.com/metacubex/mihomo/common/xsync"
+	"github.com/metacubex/mihomo/component/memory"
 )
 
 var DefaultManager *Manager
@@ -109,9 +109,11 @@ func (m *Manager) Snapshot() *Snapshot {
 }
 
 func (m *Manager) updateMemory() {
-	var memStats runtime.MemStats
-	runtime.ReadMemStats(&memStats)
-	m.memory = memStats.Sys
+	stat, err := memory.GetMemoryInfo(m.pid)
+	if err != nil {
+		return
+	}
+	m.memory = stat.USS
 }
 
 func (m *Manager) ResetStatistic() {

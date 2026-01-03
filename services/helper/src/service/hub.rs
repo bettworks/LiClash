@@ -15,6 +15,7 @@ const LISTEN_PORT: u16 = 57890;
 pub struct StartParams {
     pub path: String,
     pub arg: String,
+    pub home_dir: Option<String>,
 }
 
 fn sha256_file(path: &str) -> Result<String, Error> {
@@ -45,11 +46,17 @@ fn start(start_params: StartParams) -> impl Reply {
     }
     stop();
     let mut process = PROCESS.lock().unwrap();
-    match Command::new(&start_params.path)
-        .stderr(Stdio::piped())
-        .arg(&start_params.arg)
-        .spawn()
-    {
+    
+    // 构建命令并设置 SAFE_PATHS 环境变量
+    let mut command = Command::new(&start_params.path);
+    command.stderr(Stdio::piped()).arg(&start_params.arg);
+    
+    // 如果提供了 home_dir，设置 SAFE_PATHS 环境变量
+    if let Some(home_dir) = &start_params.home_dir {
+        command.env("SAFE_PATHS", home_dir);
+    }
+    
+    match command.spawn() {
         Ok(child) => {
             *process = Some(child);
             if let Some(ref mut child) = *process {
