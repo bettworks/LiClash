@@ -146,9 +146,6 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
 
   @override
   Widget build(BuildContext context) {
-    // 监听 groups 长度变化，确保在首次加载成功后重建 UI
-    ref.watch(groupsProvider.select((state) => state.length));
-    
     final proxiesType = ref.watch(
       proxiesStyleSettingProvider.select(
         (state) => state.type,

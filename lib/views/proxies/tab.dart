@@ -193,11 +193,16 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
     final state = ref.watch(proxiesTabStateProvider);
     final groups = state.groups;
     if (groups.isEmpty) {
-      return NullStatus(
-        label: appLocalizations.nullTip(appLocalizations.proxies),
-      );
+      // If still loading, show a progress indicator; otherwise show empty state
+      final isLoading = ref.watch(loadingProvider);
+      return isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : NullStatus(
+              label: appLocalizations.nullTip(appLocalizations.proxies),
+            );
     }
     // Safety check: ensure controller matches groups count
+    // (existing logic continues)
     if (_tabController != null && _tabController!.length != groups.length) {
       _destroyTabController();
       _updateTabController(groups.length, _tabController?.index ?? 0);
