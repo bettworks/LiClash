@@ -248,9 +248,7 @@ class AppSidebarContainer extends ConsumerWidget {
                             },
                             extended: false,
                             selectedIndex: currentIndex,
-                            labelType: showLabel
-                                ? NavigationRailLabelType.all
-                                : NavigationRailLabelType.none,
+                            labelType: NavigationRailLabelType.all,
                           ),
                         ),
                       ),

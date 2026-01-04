@@ -219,6 +219,7 @@ class _LoopbackItem extends StatelessWidget {
         windows?.runas(
           '"${join(dirname(Platform.resolvedExecutable), "EnableLoopback.exe")}"',
           '',
+          showWindow: true,
         );
       },
     );

@@ -143,7 +143,7 @@ class Windows {
     return _instance!;
   }
 
-  bool runas(String command, String arguments) {
+  bool runas(String command, String arguments, {bool showWindow = false}) {
     final commandPtr = command.toNativeUtf16();
     final argumentsPtr = arguments.toNativeUtf16();
     final operationPtr = 'runas'.toNativeUtf16();
@@ -164,14 +164,16 @@ class Windows {
             Pointer<Utf16> lpDirectory,
             int nShowCmd)>('ShellExecuteW');
 
-    // 使用 SW_HIDE(0) 隐藏被提权进程的主窗口，避免出现 cmd/PowerShell 黑框
+    // SW_HIDE(0) 隐藏窗口，用于命令行工具
+    // SW_SHOWNORMAL(1) 显示窗口，用于 GUI 工具
+    final nShowCmd = showWindow ? 1 : 0;
     final result = shellExecute(
       nullptr,
       operationPtr,
       commandPtr,
       argumentsPtr,
       nullptr,
-      0,
+      nShowCmd,
     );
 
     calloc.free(commandPtr);

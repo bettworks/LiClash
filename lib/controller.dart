@@ -496,14 +496,27 @@ class AppController {
 
   Future<void> updateGroups() async {
     try {
-      _ref.read(groupsProvider.notifier).value = await retry(
+      final newGroups = await retry(
         task: () async {
           return await clashCore.getProxiesGroups();
         },
         retryIf: (res) => res.isEmpty,
+        maxAttempts: 5, // 增加重试次数，给核心更多初始化时间
       );
-    } catch (_) {
-      _ref.read(groupsProvider.notifier).value = [];
+      // 成功获取到数据时更新
+      _ref.read(groupsProvider.notifier).value = newGroups;
+    } catch (e) {
+      final currentGroups = _ref.read(groupsProvider);
+      if (currentGroups.isEmpty) {
+        // 新安装场景：首次加载失败，延迟后再次尝试
+        commonPrint.log('updateGroups initial load failed, scheduling retry: $e');
+        Future.delayed(const Duration(seconds: 2), () {
+          updateGroupsDebounce();
+        });
+      } else {
+        // 已有数据场景：保留现有，避免侧边栏闪烁
+        commonPrint.log('updateGroups error, keeping existing groups: $e');
+      }
     }
   }
 
