@@ -2,6 +2,8 @@
 import 'package:li_clash/l10n/l10n.dart';
 
 extension AppLocalizationsExtension on AppLocalizations {
+  String get otherSettings => 'Other Settings';
+  String get otherSettingsDesc => 'Other function settings';
   String get dozeSupport => 'Doze Support';
   String get dozeSupportDesc => 'Enable Doze mode support when turned on';
   String get smartSuspend => 'Smart Suspend';

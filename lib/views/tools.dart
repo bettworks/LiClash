@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:li_clash/common/common.dart';
 import 'package:li_clash/l10n/l10n.dart';
+import 'package:li_clash/l10n/l10n_temp_extension.dart';
 import 'package:li_clash/models/models.dart';
 import 'package:li_clash/providers/providers.dart';
 import 'package:li_clash/state.dart';
