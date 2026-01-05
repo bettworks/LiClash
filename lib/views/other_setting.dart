@@ -103,7 +103,7 @@ class _SmartSuspendItemState extends ConsumerState<SmartSuspendItem> {
               
               // 通知Android端
               final finalEnabled = shouldEnable && newValue.isNotEmpty;
-              vpn?.updateSmartSuspend(finalEnabled, newValue);
+              vpn?.updateSmartSuspend(finalEnabled, newValue, appLocalizations.smartSuspendActive);
               
               Navigator.pop(context);
             },
@@ -180,7 +180,7 @@ class _SmartSuspendItemState extends ConsumerState<SmartSuspendItem> {
             ref.read(appSettingProvider.notifier).updateState(
               (state) => state.copyWith(smartSuspendEnabled: false),
             );
-            vpn?.updateSmartSuspend(false, ips);
+            vpn?.updateSmartSuspend(false, ips, appLocalizations.smartSuspendActive);
           }
         },
       ),

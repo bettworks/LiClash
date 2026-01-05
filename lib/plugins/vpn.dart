@@ -64,10 +64,11 @@ class Vpn {
     });
   }
 
-  Future<bool?> updateSmartSuspend(bool enabled, String ips) async {
+  Future<bool?> updateSmartSuspend(bool enabled, String ips, String activeText) async {
     return await methodChannel.invokeMethod<bool>('updateSmartSuspend', {
       'enabled': enabled,
       'ips': ips,
+      'activeText': activeText,
     });
   }
 

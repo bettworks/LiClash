@@ -27,6 +27,9 @@ object SuspendManager {
     // 回调：用于通知栏更新
     var onSuspendReasonChanged: ((SuspendSource?) -> Unit)? = null
     
+    // 智能暂停激活时的提示文本（本地化）
+    var smartSuspendActiveText: String = "Smart Suspend Active"
+    
     /**
      * 更新某个暂停源的状态
      */

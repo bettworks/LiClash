@@ -19,8 +19,18 @@ import com.appshub.liclash.extensions.awaitResult
 import com.appshub.liclash.extensions.resolveDns
 import com.appshub.liclash.models.StartForegroundParams
 import com.appshub.liclash.models.VpnOptions
+import com.appshub.liclash.modules.SuspendManager
+import com.appshub.liclash.modules.SuspendSource
 import com.appshub.liclash.services.BaseServiceInterface
 import com.appshub.liclash.services.LiClashService
+
+import com.appshub.liclash.services.LiClashVpnService
+import com.google.gson.Gson
+import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import com.appshub.liclash.services.LiClashVpnService
 import com.google.gson.Gson
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -102,6 +112,10 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             "updateSmartSuspend" -> {
                 val enabled = call.argument<Boolean>("enabled") ?: false
                 val ips = call.argument<String>("ips") ?: ""
+                val activeText = call.argument<String>("activeText")
+                if (activeText != null) {
+                    SuspendManager.smartSuspendActiveText = activeText
+                }
                 updateSmartSuspend(enabled, ips)
                 result.success(true)
             }
@@ -181,6 +195,16 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         GlobalState.runLock.lock()
         try {
             if (GlobalState.runState.value != RunState.START) return
+
+            // 检查智能暂停状态
+            val suspendReason = SuspendManager.getSuspendReason()
+            if (suspendReason == SuspendSource.SMART_SUSPEND) {
+                 val content = SuspendManager.smartSuspendActiveText
+                 val title = lastStartForegroundParams?.title ?: "LiClash"
+                 liClashService?.startForeground(title, content)
+                 return
+            }
+            
             val data = flutterMethodChannel.awaitResult<String>("getStartForegroundParams")
             val startForegroundParams = if (data != null) Gson().fromJson(
                 data, StartForegroundParams::class.java
