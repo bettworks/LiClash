@@ -11,12 +11,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class Contributor {
   final String avatar;
   final String name;
-  final String link;
 
   const Contributor({
     required this.avatar,
     required this.name,
-    required this.link,
   });
 }
 
@@ -49,28 +47,37 @@ class AboutView extends StatelessWidget {
           },
         ),
         ListItem(
-          title: const Text('Telegram'),
+          title: const Text('Telegram 群组'),
           onTap: () {
             globalState.openUrl(
-              'https://t.me/LiClash',
+              'https://t.me/appshub_chat',
             );
           },
           trailing: const Icon(Icons.launch),
         ),
         ListItem(
-          title: Text(appLocalizations.project),
+          title: const Text('Telegram 频道'),
           onTap: () {
             globalState.openUrl(
-              'https://github.com/$repository',
+              'https://t.me/appshub_channel',
             );
           },
           trailing: const Icon(Icons.launch),
         ),
         ListItem(
-          title: Text(appLocalizations.core),
+          title: const Text('FlClash 项目'),
           onTap: () {
             globalState.openUrl(
-              'https://github.com/chen08209/Clash.Meta/tree/LiClash',
+              'https://github.com/chen08209/FlClash',
+            );
+          },
+          trailing: const Icon(Icons.launch),
+        ),
+        ListItem(
+          title: const Text('Mihomo 内核'),
+          onTap: () {
+            globalState.openUrl(
+              'https://github.com/MetaCubeX/mihomo',
             );
           },
           trailing: const Icon(Icons.launch),
@@ -84,12 +91,22 @@ class AboutView extends StatelessWidget {
       Contributor(
         avatar: 'assets/images/avatars/june2.jpg',
         name: 'June2',
-        link: 'https://t.me/Jibadong',
       ),
       Contributor(
         avatar: 'assets/images/avatars/arue.jpg',
         name: 'Arue',
-        link: 'https://t.me/xrcm6868',
+      ),
+      Contributor(
+        avatar: 'assets/images/avatars/dabaozi.jpg',
+        name: '大包子',
+      ),
+      Contributor(
+        avatar: 'assets/images/avatars/xiaolou.jpg',
+        name: '小楼',
+      ),
+      Contributor(
+        avatar: 'assets/images/avatars/www.jpg',
+        name: 'Www',
       ),
     ];
     return generateSection(
@@ -194,30 +211,25 @@ class Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      child: Column(
-        children: [
-          SizedBox(
-            width: 36,
-            height: 36,
-            child: CircleAvatar(
-              foregroundImage: AssetImage(
-                contributor.avatar,
-              ),
+    return Column(
+      children: [
+        SizedBox(
+          width: 36,
+          height: 36,
+          child: CircleAvatar(
+            foregroundImage: AssetImage(
+              contributor.avatar,
             ),
           ),
-          const SizedBox(
-            height: 4,
-          ),
-          Text(
-            contributor.name,
-            style: context.textTheme.bodySmall,
-          )
-        ],
-      ),
-      onTap: () {
-        globalState.openUrl(contributor.link);
-      },
+        ),
+        const SizedBox(
+          height: 4,
+        ),
+        Text(
+          contributor.name,
+          style: context.textTheme.bodySmall,
+        )
+      ],
     );
   }
 }

@@ -27,6 +27,9 @@ _$AppSettingPropsImpl _$$AppSettingPropsImplFromJson(
       minimizeOnExit: json['minimizeOnExit'] as bool? ?? true,
       hidden: json['hidden'] as bool? ?? false,
       developerMode: json['developerMode'] as bool? ?? false,
+      dozeSupport: json['dozeSupport'] as bool? ?? false,
+      smartSuspendEnabled: json['smartSuspendEnabled'] as bool? ?? false,
+      smartSuspendIps: json['smartSuspendIps'] as String? ?? '',
       recoveryStrategy: $enumDecodeNullable(
               _$RecoveryStrategyEnumMap, json['recoveryStrategy']) ??
           RecoveryStrategy.compatible,
@@ -53,6 +56,9 @@ Map<String, dynamic> _$$AppSettingPropsImplToJson(
       'minimizeOnExit': instance.minimizeOnExit,
       'hidden': instance.hidden,
       'developerMode': instance.developerMode,
+      'dozeSupport': instance.dozeSupport,
+      'smartSuspendEnabled': instance.smartSuspendEnabled,
+      'smartSuspendIps': instance.smartSuspendIps,
       'recoveryStrategy': _$RecoveryStrategyEnumMap[instance.recoveryStrategy]!,
     };
 
@@ -191,9 +197,9 @@ _$ProxiesStyleImpl _$$ProxiesStyleImplFromJson(Map<String, dynamic> json) =>
           ProxiesLayout.standard,
       iconStyle:
           $enumDecodeNullable(_$ProxiesIconStyleEnumMap, json['iconStyle']) ??
-              ProxiesIconStyle.standard,
+              ProxiesIconStyle.none,
       cardType: $enumDecodeNullable(_$ProxyCardTypeEnumMap, json['cardType']) ??
-          ProxyCardType.expand,
+          ProxyCardType.shrink,
       iconMap: (json['iconMap'] as Map<String, dynamic>?)?.map(
             (k, e) => MapEntry(k, e as String),
           ) ??

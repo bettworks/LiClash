@@ -58,6 +58,19 @@ class Vpn {
     return await methodChannel.invokeMethod<bool>('stop');
   }
 
+  Future<bool?> updateDozeSupport(bool enabled) async {
+    return await methodChannel.invokeMethod<bool>('updateDozeSupport', {
+      'enabled': enabled,
+    });
+  }
+
+  Future<bool?> updateSmartSuspend(bool enabled, String ips) async {
+    return await methodChannel.invokeMethod<bool>('updateSmartSuspend', {
+      'enabled': enabled,
+      'ips': ips,
+    });
+  }
+
   void addListener(VpnListener listener) {
     _listeners.add(listener);
   }

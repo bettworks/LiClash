@@ -86,6 +86,9 @@ class AppSettingProps with _$AppSettingProps {
     @Default(true) bool minimizeOnExit,
     @Default(false) bool hidden,
     @Default(false) bool developerMode,
+    @Default(false) bool dozeSupport,
+    @Default(false) bool smartSuspendEnabled,
+    @Default('') String smartSuspendIps,
     @Default(RecoveryStrategy.compatible) RecoveryStrategy recoveryStrategy,
   }) = _AppSettingProps;
 

@@ -93,6 +93,19 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(true)
             }
 
+            "updateDozeSupport" -> {
+                val enabled = call.argument<Boolean>("enabled") ?: false
+                updateDozeSupport(enabled)
+                result.success(true)
+            }
+            
+            "updateSmartSuspend" -> {
+                val enabled = call.argument<Boolean>("enabled") ?: false
+                val ips = call.argument<String>("ips") ?: ""
+                updateSmartSuspend(enabled, ips)
+                result.success(true)
+            }
+
             else -> {
                 result.notImplemented()
             }
@@ -272,5 +285,13 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             false -> Intent(LiClashApplication.getAppContext(), LiClashService::class.java)
         }
         LiClashApplication.getAppContext().bindService(intent, connection, Context.BIND_AUTO_CREATE)
+    }
+
+    private fun updateDozeSupport(enabled: Boolean) {
+        (liClashService as? LiClashVpnService)?.updateSuspendEnabled(enabled)
+    }
+    
+    private fun updateSmartSuspend(enabled: Boolean, ips: String) {
+        (liClashService as? LiClashVpnService)?.updateSmartSuspend(enabled, ips)
     }
 }

@@ -18,6 +18,7 @@ import 'package:path/path.dart' show dirname, join;
 
 import 'backup_and_recovery.dart';
 import 'developer.dart';
+import 'other_setting.dart';
 import 'theme.dart';
 
 class ToolsView extends ConsumerStatefulWidget {
@@ -80,6 +81,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         if (system.isWindows) _LoopbackItem(),
         if (system.isAndroid) _AccessItem(),
         _ConfigItem(),
+        if (system.isAndroid) _OtherSettingItem(),
         _SettingItem(),
       ],
     );
@@ -255,6 +257,23 @@ class _ConfigItem extends StatelessWidget {
       delegate: OpenDelegate(
         title: appLocalizations.basicConfig,
         widget: const ConfigView(),
+      ),
+    );
+  }
+}
+
+class _OtherSettingItem extends StatelessWidget {
+  const _OtherSettingItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListItem.open(
+      leading: const Icon(Icons.more_horiz),
+      title: Text(appLocalizations.otherSettings),
+      subtitle: Text(appLocalizations.otherSettingsDesc),
+      delegate: OpenDelegate(
+        title: appLocalizations.otherSettings,
+        widget: const OtherSettingsView(),
       ),
     );
   }

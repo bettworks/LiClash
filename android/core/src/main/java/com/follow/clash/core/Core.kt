@@ -44,6 +44,10 @@ data object Core {
 
     external fun stopTun()
 
+    external fun suspended(
+        suspended: Boolean,
+    )
+
     init {
         System.loadLibrary("core")
     }
