@@ -1,5 +1,6 @@
 package com.appshub.liclash.core
 
+import android.util.Log
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.URL
@@ -45,7 +46,13 @@ data object Core {
     }
 
     fun suspended(value: Boolean) {
-        suspend(if (value) 1 else 0)
+        try {
+            Log.d("Core", "suspended called with value: $value")
+            suspend(if (value) 1 else 0)
+            Log.d("Core", "suspend JNI call completed")
+        } catch (e: Exception) {
+            Log.e("Core", "Error calling suspend: ${e.message}", e)
+        }
     }
 
     external fun stopTun()
