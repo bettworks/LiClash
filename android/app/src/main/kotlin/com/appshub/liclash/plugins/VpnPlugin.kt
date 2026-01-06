@@ -19,12 +19,9 @@ import com.appshub.liclash.extensions.awaitResult
 import com.appshub.liclash.extensions.resolveDns
 import com.appshub.liclash.models.StartForegroundParams
 import com.appshub.liclash.models.VpnOptions
-import com.appshub.liclash.modules.SuspendManager
-import com.appshub.liclash.modules.SuspendSource
+import com.appshub.liclash.modules.SuspendModule
 import com.appshub.liclash.services.BaseServiceInterface
 import com.appshub.liclash.services.LiClashService
-
-
 import com.appshub.liclash.services.LiClashVpnService
 import com.google.gson.Gson
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -49,6 +46,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private var lastStartForegroundParams: StartForegroundParams? = null
     private var timerJob: Job? = null
     private val uidPageNameMap = mutableMapOf<Int, String>()
+    private var suspendModule: SuspendModule? = null
 
     private val connectivity by lazy {
         LiClashApplication.getAppContext().getSystemService<ConnectivityManager>()
@@ -94,23 +92,6 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
             "stop" -> {
                 handleStop()
-                result.success(true)
-            }
-
-            "updateDozeSupport" -> {
-                val enabled = call.argument<Boolean>("enabled") ?: false
-                updateDozeSupport(enabled)
-                result.success(true)
-            }
-            
-            "updateSmartSuspend" -> {
-                val enabled = call.argument<Boolean>("enabled") ?: false
-                val ips = call.argument<String>("ips") ?: ""
-                val activeText = call.argument<String>("activeText")
-                if (activeText != null) {
-                    SuspendManager.smartSuspendActiveText = activeText
-                }
-                updateSmartSuspend(enabled, ips)
                 result.success(true)
             }
 
@@ -189,16 +170,6 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         GlobalState.runLock.lock()
         try {
             if (GlobalState.runState.value != RunState.START) return
-
-            // 检查智能暂停状态
-            val suspendReason = SuspendManager.getSuspendReason()
-            if (suspendReason == SuspendSource.SMART_SUSPEND) {
-                 val content = SuspendManager.smartSuspendActiveText
-                 val title = lastStartForegroundParams?.title ?: "LiClash"
-                 liClashService?.startForeground(title, content)
-                 return
-            }
-            
             val data = flutterMethodChannel.awaitResult<String>("getStartForegroundParams")
             val startForegroundParams = if (data != null) Gson().fromJson(
                 data, StartForegroundParams::class.java
@@ -254,6 +225,12 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 resolverProcess = this::resolverProcess,
             )
             startForegroundJob()
+            // Install SuspendModule if dozeSuspend is enabled
+            if (options?.dozeSuspend == true) {
+                suspendModule?.uninstall()
+                suspendModule = SuspendModule(LiClashApplication.getAppContext())
+                suspendModule?.install()
+            }
         }
     }
 
@@ -287,6 +264,9 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         GlobalState.runLock.withLock {
             if (GlobalState.runState.value == RunState.STOP) return
             GlobalState.runState.value = RunState.STOP
+            // Uninstall SuspendModule
+            suspendModule?.uninstall()
+            suspendModule = null
             liClashService?.stop()
             stopForegroundJob()
             Core.stopTun()
@@ -303,13 +283,5 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             false -> Intent(LiClashApplication.getAppContext(), LiClashService::class.java)
         }
         LiClashApplication.getAppContext().bindService(intent, connection, Context.BIND_AUTO_CREATE)
-    }
-
-    private fun updateDozeSupport(enabled: Boolean) {
-        (liClashService as? LiClashVpnService)?.updateSuspendEnabled(enabled)
-    }
-    
-    private fun updateSmartSuspend(enabled: Boolean, ips: String) {
-        (liClashService as? LiClashVpnService)?.updateSmartSuspend(enabled, ips)
     }
 }

@@ -465,6 +465,14 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "options": MessageLookupByLibrary.simpleMessage("Options"),
     "other": MessageLookupByLibrary.simpleMessage("Other"),
+    "otherSettings": MessageLookupByLibrary.simpleMessage("Other Settings"),
+    "otherSettingsDesc": MessageLookupByLibrary.simpleMessage(
+      "Modify other related settings",
+    ),
+    "dozeSuspend": MessageLookupByLibrary.simpleMessage("Doze Suspend"),
+    "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
+      "Enable Doze suspend mode support",
+    ),
     "otherContributors": MessageLookupByLibrary.simpleMessage(
       "Other contributors",
     ),

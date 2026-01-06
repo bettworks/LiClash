@@ -17,29 +17,15 @@ import com.appshub.liclash.extensions.getIpv6RouteAddress
 import com.appshub.liclash.extensions.toCIDR
 import com.appshub.liclash.models.AccessControlMode
 import com.appshub.liclash.models.VpnOptions
-import com.appshub.liclash.modules.SmartSuspendModule
-import com.appshub.liclash.modules.SuspendManager
-import com.appshub.liclash.modules.SuspendModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 
 class LiClashVpnService : VpnService(), BaseServiceInterface {
-    private var suspendModule: SuspendModule? = null
-    private var smartSuspendModule: SmartSuspendModule? = null
-
     override fun onCreate() {
         super.onCreate()
         GlobalState.initServiceEngine()
-        
-        // 初始化SuspendModule
-        suspendModule = SuspendModule(this)
-        suspendModule?.install()
-        
-        // 初始化SmartSuspendModule
-        smartSuspendModule = SmartSuspendModule(this)
-        smartSuspendModule?.install()
     }
 
     override fun start(options: VpnOptions): Int {
@@ -201,20 +187,7 @@ class LiClashVpnService : VpnService(), BaseServiceInterface {
     }
 
     override fun onDestroy() {
-        suspendModule?.uninstall()
-        suspendModule = null
-        smartSuspendModule?.uninstall()
-        smartSuspendModule = null
-        SuspendManager.clear()
         stop()
         super.onDestroy()
-    }
-
-    fun updateSuspendEnabled(enabled: Boolean) {
-        suspendModule?.updateSuspendEnabled(enabled)
-    }
-    
-    fun updateSmartSuspend(enabled: Boolean, ips: String) {
-        smartSuspendModule?.updateConfig(enabled, ips)
     }
 }

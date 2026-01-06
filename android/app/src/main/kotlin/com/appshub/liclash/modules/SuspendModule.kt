@@ -1,90 +1,78 @@
 package com.appshub.liclash.modules
 
-import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.PowerManager
+import android.util.Log
 import androidx.core.content.getSystemService
-import com.appshub.liclash.GlobalState
 import com.appshub.liclash.core.Core
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.launch
 
-class SuspendModule(private val service: Service) {
-    private val scope = CoroutineScope(Dispatchers.Default)
-    private val screenStateFlow = MutableStateFlow(true)
-    private val suspendEnabledFlow = MutableStateFlow(false)
-    private var receiver: android.content.BroadcastReceiver? = null
+class SuspendModule(private val context: Context) {
+    companion object {
+        private const val TAG = "SuspendModule"
+    }
+
+    private var isInstalled = false
+
+    private val powerManager: PowerManager? by lazy {
+        context.getSystemService<PowerManager>()
+    }
 
     private fun isScreenOn(): Boolean {
-        val pm = service.getSystemService<PowerManager>()
-        return when (pm != null) {
-            true -> pm.isInteractive
-            false -> true
-        }
+        return powerManager?.isInteractive ?: true
     }
 
     private val isDeviceIdleMode: Boolean
-        get() {
-            return service.getSystemService<PowerManager>()?.isDeviceIdleMode ?: false
-        }
+        get() = powerManager?.isDeviceIdleMode ?: false
 
-    private fun onUpdate(isScreenOn: Boolean, isSuspendEnabled: Boolean) {
-        if (!isSuspendEnabled) {
-            // 如果功能未启用,通知暂停管理器
-            SuspendManager.updateSuspend(SuspendSource.DOZE, false)
+    private fun onUpdate(isScreenOn: Boolean) {
+        if (isScreenOn) {
+            Log.i(TAG, "Screen ON - Resume from suspend")
+            Core.suspended(false)
             return
         }
+        val shouldSuspend = isDeviceIdleMode
+        if (shouldSuspend) {
+            Log.i(TAG, "Device Idle Mode - Suspend enabled")
+        }
+        Core.suspended(shouldSuspend)
+    }
 
-        // 计算是否需要暂停
-        val shouldSuspend = !isScreenOn && isDeviceIdleMode
-        
-        // 通知暂停管理器（由管理器根据优先级决定最终状态）
-        SuspendManager.updateSuspend(SuspendSource.DOZE, shouldSuspend)
+    private val screenReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                Intent.ACTION_SCREEN_ON -> onUpdate(true)
+                Intent.ACTION_SCREEN_OFF -> onUpdate(false)
+            }
+        }
     }
 
     fun install() {
-        // 创建并注册BroadcastReceiver
-        receiver = object : android.content.BroadcastReceiver() {
-            override fun onReceive(context: android.content.Context?, intent: Intent?) {
-                val isScreenOn = intent?.action == Intent.ACTION_SCREEN_ON
-                screenStateFlow.value = isScreenOn
-            }
-        }
+        if (isInstalled) return
+        isInstalled = true
         
-        val intentFilter = android.content.IntentFilter().apply {
+        val filter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SCREEN_OFF)
         }
+        context.registerReceiver(screenReceiver, filter)
         
-        service.registerReceiver(receiver, intentFilter)
-        
-        // 初始化屏幕状态
-        screenStateFlow.value = isScreenOn()
-
-        // 监听状态变化
-        scope.launch {
-            combine(screenStateFlow, suspendEnabledFlow) { screenOn, enabled ->
-                Pair(screenOn, enabled)
-            }.collect { (screenOn, enabled) ->
-                onUpdate(screenOn, enabled)
-            }
-        }
-    }
-
-    fun updateSuspendEnabled(enabled: Boolean) {
-        suspendEnabledFlow.value = enabled
+        // Initial state
+        onUpdate(isScreenOn())
+        Log.i(TAG, "SuspendModule installed")
     }
 
     fun uninstall() {
+        if (!isInstalled) return
+        isInstalled = false
+        
         try {
-            receiver?.let { service.unregisterReceiver(it) }
-            receiver = null
-        } catch (_: Exception) {
+            context.unregisterReceiver(screenReceiver)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to unregister receiver: ${e.message}")
         }
-        scope.cancel()
+        Log.i(TAG, "SuspendModule uninstalled")
     }
 }

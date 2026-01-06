@@ -230,6 +230,26 @@ class AppLocalizations {
     return Intl.message('Other', name: 'other', desc: '', args: []);
   }
 
+  /// `Other Settings`
+  String get otherSettings {
+    return Intl.message('Other Settings', name: 'otherSettings', desc: '', args: []);
+  }
+
+  /// `Modify other related settings`
+  String get otherSettingsDesc {
+    return Intl.message('Modify other related settings', name: 'otherSettingsDesc', desc: '', args: []);
+  }
+
+  /// `Doze Suspend`
+  String get dozeSuspend {
+    return Intl.message('Doze Suspend', name: 'dozeSuspend', desc: '', args: []);
+  }
+
+  /// `Enable Doze suspend mode support`
+  String get dozeSuspendDesc {
+    return Intl.message('Enable Doze suspend mode support', name: 'dozeSuspendDesc', desc: '', args: []);
+  }
+
   /// `About`
   String get about {
     return Intl.message('About', name: 'about', desc: '', args: []);

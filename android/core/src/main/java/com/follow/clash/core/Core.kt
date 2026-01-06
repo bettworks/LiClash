@@ -10,6 +10,8 @@ data object Core {
         cb: TunInterface
     )
 
+    private external fun suspend(suspended: Int)
+
     private fun parseInetSocketAddress(address: String): InetSocketAddress {
         val url = URL("https://$address")
 
@@ -42,11 +44,11 @@ data object Core {
         });
     }
 
-    external fun stopTun()
+    fun suspended(value: Boolean) {
+        suspend(if (value) 1 else 0)
+    }
 
-    external fun suspended(
-        suspended: Boolean,
-    )
+    external fun stopTun()
 
     init {
         System.loadLibrary("core")

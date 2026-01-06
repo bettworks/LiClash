@@ -38,9 +38,6 @@ mixin _$AppSettingProps {
   bool get minimizeOnExit => throw _privateConstructorUsedError;
   bool get hidden => throw _privateConstructorUsedError;
   bool get developerMode => throw _privateConstructorUsedError;
-  bool get dozeSupport => throw _privateConstructorUsedError;
-  bool get smartSuspendEnabled => throw _privateConstructorUsedError;
-  String get smartSuspendIps => throw _privateConstructorUsedError;
   RecoveryStrategy get recoveryStrategy => throw _privateConstructorUsedError;
 
   /// Serializes this AppSettingProps to a JSON map.
@@ -77,9 +74,6 @@ abstract class $AppSettingPropsCopyWith<$Res> {
       bool minimizeOnExit,
       bool hidden,
       bool developerMode,
-      bool dozeSupport,
-      bool smartSuspendEnabled,
-      String smartSuspendIps,
       RecoveryStrategy recoveryStrategy});
 }
 
@@ -114,9 +108,6 @@ class _$AppSettingPropsCopyWithImpl<$Res, $Val extends AppSettingProps>
     Object? minimizeOnExit = null,
     Object? hidden = null,
     Object? developerMode = null,
-    Object? dozeSupport = null,
-    Object? smartSuspendEnabled = null,
-    Object? smartSuspendIps = null,
     Object? recoveryStrategy = null,
   }) {
     return _then(_value.copyWith(
@@ -184,18 +175,6 @@ class _$AppSettingPropsCopyWithImpl<$Res, $Val extends AppSettingProps>
           ? _value.developerMode
           : developerMode // ignore: cast_nullable_to_non_nullable
               as bool,
-      dozeSupport: null == dozeSupport
-          ? _value.dozeSupport
-          : dozeSupport // ignore: cast_nullable_to_non_nullable
-              as bool,
-      smartSuspendEnabled: null == smartSuspendEnabled
-          ? _value.smartSuspendEnabled
-          : smartSuspendEnabled // ignore: cast_nullable_to_non_nullable
-              as bool,
-      smartSuspendIps: null == smartSuspendIps
-          ? _value.smartSuspendIps
-          : smartSuspendIps // ignore: cast_nullable_to_non_nullable
-              as String,
       recoveryStrategy: null == recoveryStrategy
           ? _value.recoveryStrategy
           : recoveryStrategy // ignore: cast_nullable_to_non_nullable
@@ -230,9 +209,6 @@ abstract class _$$AppSettingPropsImplCopyWith<$Res>
       bool minimizeOnExit,
       bool hidden,
       bool developerMode,
-      bool dozeSupport,
-      bool smartSuspendEnabled,
-      String smartSuspendIps,
       RecoveryStrategy recoveryStrategy});
 }
 
@@ -265,9 +241,6 @@ class __$$AppSettingPropsImplCopyWithImpl<$Res>
     Object? minimizeOnExit = null,
     Object? hidden = null,
     Object? developerMode = null,
-    Object? dozeSupport = null,
-    Object? smartSuspendEnabled = null,
-    Object? smartSuspendIps = null,
     Object? recoveryStrategy = null,
   }) {
     return _then(_$AppSettingPropsImpl(
@@ -335,18 +308,6 @@ class __$$AppSettingPropsImplCopyWithImpl<$Res>
           ? _value.developerMode
           : developerMode // ignore: cast_nullable_to_non_nullable
               as bool,
-      dozeSupport: null == dozeSupport
-          ? _value.dozeSupport
-          : dozeSupport // ignore: cast_nullable_to_non_nullable
-              as bool,
-      smartSuspendEnabled: null == smartSuspendEnabled
-          ? _value.smartSuspendEnabled
-          : smartSuspendEnabled // ignore: cast_nullable_to_non_nullable
-              as bool,
-      smartSuspendIps: null == smartSuspendIps
-          ? _value.smartSuspendIps
-          : smartSuspendIps // ignore: cast_nullable_to_non_nullable
-              as String,
       recoveryStrategy: null == recoveryStrategy
           ? _value.recoveryStrategy
           : recoveryStrategy // ignore: cast_nullable_to_non_nullable
@@ -376,9 +337,6 @@ class _$AppSettingPropsImpl implements _AppSettingProps {
       this.minimizeOnExit = true,
       this.hidden = false,
       this.developerMode = false,
-      this.dozeSupport = false,
-      this.smartSuspendEnabled = false,
-      this.smartSuspendIps = '',
       this.recoveryStrategy = RecoveryStrategy.compatible})
       : _dashboardWidgets = dashboardWidgets;
 
@@ -441,20 +399,11 @@ class _$AppSettingPropsImpl implements _AppSettingProps {
   final bool developerMode;
   @override
   @JsonKey()
-  final bool dozeSupport;
-  @override
-  @JsonKey()
-  final bool smartSuspendEnabled;
-  @override
-  @JsonKey()
-  final String smartSuspendIps;
-  @override
-  @JsonKey()
   final RecoveryStrategy recoveryStrategy;
 
   @override
   String toString() {
-    return 'AppSettingProps(locale: $locale, dashboardWidgets: $dashboardWidgets, onlyStatisticsProxy: $onlyStatisticsProxy, autoLaunch: $autoLaunch, silentLaunch: $silentLaunch, autoRun: $autoRun, openLogs: $openLogs, closeConnections: $closeConnections, testUrl: $testUrl, isAnimateToPage: $isAnimateToPage, autoCheckUpdate: $autoCheckUpdate, showLabel: $showLabel, disclaimerAccepted: $disclaimerAccepted, minimizeOnExit: $minimizeOnExit, hidden: $hidden, developerMode: $developerMode, dozeSupport: $dozeSupport, smartSuspendEnabled: $smartSuspendEnabled, smartSuspendIps: $smartSuspendIps, recoveryStrategy: $recoveryStrategy)';
+    return 'AppSettingProps(locale: $locale, dashboardWidgets: $dashboardWidgets, onlyStatisticsProxy: $onlyStatisticsProxy, autoLaunch: $autoLaunch, silentLaunch: $silentLaunch, autoRun: $autoRun, openLogs: $openLogs, closeConnections: $closeConnections, testUrl: $testUrl, isAnimateToPage: $isAnimateToPage, autoCheckUpdate: $autoCheckUpdate, showLabel: $showLabel, disclaimerAccepted: $disclaimerAccepted, minimizeOnExit: $minimizeOnExit, hidden: $hidden, developerMode: $developerMode, recoveryStrategy: $recoveryStrategy)';
   }
 
   @override
@@ -490,41 +439,31 @@ class _$AppSettingPropsImpl implements _AppSettingProps {
             (identical(other.hidden, hidden) || other.hidden == hidden) &&
             (identical(other.developerMode, developerMode) ||
                 other.developerMode == developerMode) &&
-            (identical(other.dozeSupport, dozeSupport) ||
-                other.dozeSupport == dozeSupport) &&
-            (identical(other.smartSuspendEnabled, smartSuspendEnabled) ||
-                other.smartSuspendEnabled == smartSuspendEnabled) &&
-            (identical(other.smartSuspendIps, smartSuspendIps) ||
-                other.smartSuspendIps == smartSuspendIps) &&
             (identical(other.recoveryStrategy, recoveryStrategy) ||
                 other.recoveryStrategy == recoveryStrategy));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hashAll([
-        runtimeType,
-        locale,
-        const DeepCollectionEquality().hash(_dashboardWidgets),
-        onlyStatisticsProxy,
-        autoLaunch,
-        silentLaunch,
-        autoRun,
-        openLogs,
-        closeConnections,
-        testUrl,
-        isAnimateToPage,
-        autoCheckUpdate,
-        showLabel,
-        disclaimerAccepted,
-        minimizeOnExit,
-        hidden,
-        developerMode,
-        dozeSupport,
-        smartSuspendEnabled,
-        smartSuspendIps,
-        recoveryStrategy
-      ]);
+  int get hashCode => Object.hash(
+      runtimeType,
+      locale,
+      const DeepCollectionEquality().hash(_dashboardWidgets),
+      onlyStatisticsProxy,
+      autoLaunch,
+      silentLaunch,
+      autoRun,
+      openLogs,
+      closeConnections,
+      testUrl,
+      isAnimateToPage,
+      autoCheckUpdate,
+      showLabel,
+      disclaimerAccepted,
+      minimizeOnExit,
+      hidden,
+      developerMode,
+      recoveryStrategy);
 
   /// Create a copy of AppSettingProps
   /// with the given fields replaced by the non-null parameter values.
@@ -562,9 +501,6 @@ abstract class _AppSettingProps implements AppSettingProps {
       final bool minimizeOnExit,
       final bool hidden,
       final bool developerMode,
-      final bool dozeSupport,
-      final bool smartSuspendEnabled,
-      final String smartSuspendIps,
       final RecoveryStrategy recoveryStrategy}) = _$AppSettingPropsImpl;
 
   factory _AppSettingProps.fromJson(Map<String, dynamic> json) =
@@ -603,12 +539,6 @@ abstract class _AppSettingProps implements AppSettingProps {
   bool get hidden;
   @override
   bool get developerMode;
-  @override
-  bool get dozeSupport;
-  @override
-  bool get smartSuspendEnabled;
-  @override
-  String get smartSuspendIps;
   @override
   RecoveryStrategy get recoveryStrategy;
 
@@ -1166,6 +1096,7 @@ mixin _$VpnProps {
   bool get systemProxy => throw _privateConstructorUsedError;
   bool get ipv6 => throw _privateConstructorUsedError;
   bool get allowBypass => throw _privateConstructorUsedError;
+  bool get dozeSuspend => throw _privateConstructorUsedError;
   AccessControl get accessControl => throw _privateConstructorUsedError;
 
   /// Serializes this VpnProps to a JSON map.
@@ -1188,6 +1119,7 @@ abstract class $VpnPropsCopyWith<$Res> {
       bool systemProxy,
       bool ipv6,
       bool allowBypass,
+      bool dozeSuspend,
       AccessControl accessControl});
 
   $AccessControlCopyWith<$Res> get accessControl;
@@ -1212,6 +1144,7 @@ class _$VpnPropsCopyWithImpl<$Res, $Val extends VpnProps>
     Object? systemProxy = null,
     Object? ipv6 = null,
     Object? allowBypass = null,
+    Object? dozeSuspend = null,
     Object? accessControl = null,
   }) {
     return _then(_value.copyWith(
@@ -1230,6 +1163,10 @@ class _$VpnPropsCopyWithImpl<$Res, $Val extends VpnProps>
       allowBypass: null == allowBypass
           ? _value.allowBypass
           : allowBypass // ignore: cast_nullable_to_non_nullable
+              as bool,
+      dozeSuspend: null == dozeSuspend
+          ? _value.dozeSuspend
+          : dozeSuspend // ignore: cast_nullable_to_non_nullable
               as bool,
       accessControl: null == accessControl
           ? _value.accessControl
@@ -1262,6 +1199,7 @@ abstract class _$$VpnPropsImplCopyWith<$Res>
       bool systemProxy,
       bool ipv6,
       bool allowBypass,
+      bool dozeSuspend,
       AccessControl accessControl});
 
   @override
@@ -1285,6 +1223,7 @@ class __$$VpnPropsImplCopyWithImpl<$Res>
     Object? systemProxy = null,
     Object? ipv6 = null,
     Object? allowBypass = null,
+    Object? dozeSuspend = null,
     Object? accessControl = null,
   }) {
     return _then(_$VpnPropsImpl(
@@ -1304,6 +1243,10 @@ class __$$VpnPropsImplCopyWithImpl<$Res>
           ? _value.allowBypass
           : allowBypass // ignore: cast_nullable_to_non_nullable
               as bool,
+      dozeSuspend: null == dozeSuspend
+          ? _value.dozeSuspend
+          : dozeSuspend // ignore: cast_nullable_to_non_nullable
+              as bool,
       accessControl: null == accessControl
           ? _value.accessControl
           : accessControl // ignore: cast_nullable_to_non_nullable
@@ -1320,6 +1263,7 @@ class _$VpnPropsImpl implements _VpnProps {
       this.systemProxy = true,
       this.ipv6 = false,
       this.allowBypass = true,
+      this.dozeSuspend = false,
       this.accessControl = defaultAccessControl});
 
   factory _$VpnPropsImpl.fromJson(Map<String, dynamic> json) =>
@@ -1339,11 +1283,14 @@ class _$VpnPropsImpl implements _VpnProps {
   final bool allowBypass;
   @override
   @JsonKey()
+  final bool dozeSuspend;
+  @override
+  @JsonKey()
   final AccessControl accessControl;
 
   @override
   String toString() {
-    return 'VpnProps(enable: $enable, systemProxy: $systemProxy, ipv6: $ipv6, allowBypass: $allowBypass, accessControl: $accessControl)';
+    return 'VpnProps(enable: $enable, systemProxy: $systemProxy, ipv6: $ipv6, allowBypass: $allowBypass, dozeSuspend: $dozeSuspend, accessControl: $accessControl)';
   }
 
   @override
@@ -1357,14 +1304,16 @@ class _$VpnPropsImpl implements _VpnProps {
             (identical(other.ipv6, ipv6) || other.ipv6 == ipv6) &&
             (identical(other.allowBypass, allowBypass) ||
                 other.allowBypass == allowBypass) &&
+            (identical(other.dozeSuspend, dozeSuspend) ||
+                other.dozeSuspend == dozeSuspend) &&
             (identical(other.accessControl, accessControl) ||
                 other.accessControl == accessControl));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, enable, systemProxy, ipv6, allowBypass, accessControl);
+  int get hashCode => Object.hash(runtimeType, enable, systemProxy, ipv6,
+      allowBypass, dozeSuspend, accessControl);
 
   /// Create a copy of VpnProps
   /// with the given fields replaced by the non-null parameter values.
@@ -1388,6 +1337,7 @@ abstract class _VpnProps implements VpnProps {
       final bool systemProxy,
       final bool ipv6,
       final bool allowBypass,
+      final bool dozeSuspend,
       final AccessControl accessControl}) = _$VpnPropsImpl;
 
   factory _VpnProps.fromJson(Map<String, dynamic> json) =
@@ -1401,6 +1351,8 @@ abstract class _VpnProps implements VpnProps {
   bool get ipv6;
   @override
   bool get allowBypass;
+  @override
+  bool get dozeSuspend;
   @override
   AccessControl get accessControl;
 

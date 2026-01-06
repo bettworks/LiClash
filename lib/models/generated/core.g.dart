@@ -115,6 +115,7 @@ _$AndroidVpnOptionsImpl _$$AndroidVpnOptionsImplFromJson(
               .toList() ??
           const [],
       dnsServerAddress: json['dnsServerAddress'] as String,
+      dozeSuspend: json['dozeSuspend'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$AndroidVpnOptionsImplToJson(
@@ -130,6 +131,7 @@ Map<String, dynamic> _$$AndroidVpnOptionsImplToJson(
       'ipv6Address': instance.ipv6Address,
       'routeAddress': instance.routeAddress,
       'dnsServerAddress': instance.dnsServerAddress,
+      'dozeSuspend': instance.dozeSuspend,
     };
 
 _$InitParamsImpl _$$InitParamsImplFromJson(Map<String, dynamic> json) =>

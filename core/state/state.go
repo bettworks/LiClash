@@ -17,6 +17,7 @@ type AndroidVpnOptions struct {
 	Ipv4Address      string         `json:"ipv4Address"`
 	Ipv6Address      string         `json:"ipv6Address"`
 	DnsServerAddress string         `json:"dnsServerAddress"`
+	DozeSuspend      bool           `json:"dozeSuspend"`
 }
 
 type AccessControl struct {
@@ -32,6 +33,7 @@ type AndroidVpnRawOptions struct {
 	AllowBypass   bool           `json:"allowBypass"`
 	SystemProxy   bool           `json:"systemProxy"`
 	Ipv6          bool           `json:"ipv6"`
+	DozeSuspend   bool           `json:"dozeSuspend"`
 }
 
 type State struct {

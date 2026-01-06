@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:li_clash/common/common.dart';
 import 'package:li_clash/l10n/l10n.dart';
-import 'package:li_clash/l10n/l10n_temp_extension.dart';
 import 'package:li_clash/models/models.dart';
 import 'package:li_clash/providers/providers.dart';
 import 'package:li_clash/state.dart';
@@ -11,6 +10,7 @@ import 'package:li_clash/views/access.dart';
 import 'package:li_clash/views/application_setting.dart';
 import 'package:li_clash/views/config/config.dart';
 import 'package:li_clash/views/hotkey.dart';
+import 'package:li_clash/views/other_setting.dart';
 import 'package:li_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +19,6 @@ import 'package:path/path.dart' show dirname, join;
 
 import 'backup_and_recovery.dart';
 import 'developer.dart';
-import 'other_setting.dart';
 import 'theme.dart';
 
 class ToolsView extends ConsumerStatefulWidget {
@@ -82,7 +81,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         if (system.isWindows) _LoopbackItem(),
         if (system.isAndroid) _AccessItem(),
         _ConfigItem(),
-        if (system.isAndroid) _OtherSettingItem(),
+        _OtherSettingItem(),
         _SettingItem(),
       ],
     );
@@ -269,12 +268,12 @@ class _OtherSettingItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.open(
-      leading: const Icon(Icons.more_horiz),
+      leading: const Icon(Icons.settings_suggest_outlined),
       title: Text(appLocalizations.otherSettings),
       subtitle: Text(appLocalizations.otherSettingsDesc),
       delegate: OpenDelegate(
         title: appLocalizations.otherSettings,
-        widget: const OtherSettingsView(),
+        widget: const OtherSettingView(),
       ),
     );
   }

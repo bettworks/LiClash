@@ -16,6 +16,12 @@ Java_com_appshub_liclash_core_Core_stopTun(JNIEnv *) {
     stopTun();
 }
 
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_appshub_liclash_core_Core_suspend(JNIEnv *, jobject, jint suspended) {
+    suspend(suspended);
+}
+
 
 static jmethodID m_tun_interface_protect;
 static jmethodID m_tun_interface_resolve_process;

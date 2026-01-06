@@ -901,6 +901,7 @@ mixin _$AndroidVpnOptions {
   String get ipv6Address => throw _privateConstructorUsedError;
   List<String> get routeAddress => throw _privateConstructorUsedError;
   String get dnsServerAddress => throw _privateConstructorUsedError;
+  bool get dozeSuspend => throw _privateConstructorUsedError;
 
   /// Serializes this AndroidVpnOptions to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -928,7 +929,8 @@ abstract class $AndroidVpnOptionsCopyWith<$Res> {
       String ipv4Address,
       String ipv6Address,
       List<String> routeAddress,
-      String dnsServerAddress});
+      String dnsServerAddress,
+      bool dozeSuspend});
 
   $AccessControlCopyWith<$Res>? get accessControl;
 }
@@ -958,6 +960,7 @@ class _$AndroidVpnOptionsCopyWithImpl<$Res, $Val extends AndroidVpnOptions>
     Object? ipv6Address = null,
     Object? routeAddress = null,
     Object? dnsServerAddress = null,
+    Object? dozeSuspend = null,
   }) {
     return _then(_value.copyWith(
       enable: null == enable
@@ -1000,6 +1003,10 @@ class _$AndroidVpnOptionsCopyWithImpl<$Res, $Val extends AndroidVpnOptions>
           ? _value.dnsServerAddress
           : dnsServerAddress // ignore: cast_nullable_to_non_nullable
               as String,
+      dozeSuspend: null == dozeSuspend
+          ? _value.dozeSuspend
+          : dozeSuspend // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 
@@ -1036,7 +1043,8 @@ abstract class _$$AndroidVpnOptionsImplCopyWith<$Res>
       String ipv4Address,
       String ipv6Address,
       List<String> routeAddress,
-      String dnsServerAddress});
+      String dnsServerAddress,
+      bool dozeSuspend});
 
   @override
   $AccessControlCopyWith<$Res>? get accessControl;
@@ -1065,6 +1073,7 @@ class __$$AndroidVpnOptionsImplCopyWithImpl<$Res>
     Object? ipv6Address = null,
     Object? routeAddress = null,
     Object? dnsServerAddress = null,
+    Object? dozeSuspend = null,
   }) {
     return _then(_$AndroidVpnOptionsImpl(
       enable: null == enable
@@ -1107,6 +1116,10 @@ class __$$AndroidVpnOptionsImplCopyWithImpl<$Res>
           ? _value.dnsServerAddress
           : dnsServerAddress // ignore: cast_nullable_to_non_nullable
               as String,
+      dozeSuspend: null == dozeSuspend
+          ? _value.dozeSuspend
+          : dozeSuspend // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -1124,7 +1137,8 @@ class _$AndroidVpnOptionsImpl implements _AndroidVpnOptions {
       required this.ipv4Address,
       required this.ipv6Address,
       final List<String> routeAddress = const [],
-      required this.dnsServerAddress})
+      required this.dnsServerAddress,
+      this.dozeSuspend = false})
       : _bypassDomain = bypassDomain,
         _routeAddress = routeAddress;
 
@@ -1164,10 +1178,13 @@ class _$AndroidVpnOptionsImpl implements _AndroidVpnOptions {
 
   @override
   final String dnsServerAddress;
+  @override
+  @JsonKey()
+  final bool dozeSuspend;
 
   @override
   String toString() {
-    return 'AndroidVpnOptions(enable: $enable, port: $port, accessControl: $accessControl, allowBypass: $allowBypass, systemProxy: $systemProxy, bypassDomain: $bypassDomain, ipv4Address: $ipv4Address, ipv6Address: $ipv6Address, routeAddress: $routeAddress, dnsServerAddress: $dnsServerAddress)';
+    return 'AndroidVpnOptions(enable: $enable, port: $port, accessControl: $accessControl, allowBypass: $allowBypass, systemProxy: $systemProxy, bypassDomain: $bypassDomain, ipv4Address: $ipv4Address, ipv6Address: $ipv6Address, routeAddress: $routeAddress, dnsServerAddress: $dnsServerAddress, dozeSuspend: $dozeSuspend)';
   }
 
   @override
@@ -1192,7 +1209,9 @@ class _$AndroidVpnOptionsImpl implements _AndroidVpnOptions {
             const DeepCollectionEquality()
                 .equals(other._routeAddress, _routeAddress) &&
             (identical(other.dnsServerAddress, dnsServerAddress) ||
-                other.dnsServerAddress == dnsServerAddress));
+                other.dnsServerAddress == dnsServerAddress) &&
+            (identical(other.dozeSuspend, dozeSuspend) ||
+                other.dozeSuspend == dozeSuspend));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1208,7 +1227,8 @@ class _$AndroidVpnOptionsImpl implements _AndroidVpnOptions {
       ipv4Address,
       ipv6Address,
       const DeepCollectionEquality().hash(_routeAddress),
-      dnsServerAddress);
+      dnsServerAddress,
+      dozeSuspend);
 
   /// Create a copy of AndroidVpnOptions
   /// with the given fields replaced by the non-null parameter values.
@@ -1238,7 +1258,8 @@ abstract class _AndroidVpnOptions implements AndroidVpnOptions {
       required final String ipv4Address,
       required final String ipv6Address,
       final List<String> routeAddress,
-      required final String dnsServerAddress}) = _$AndroidVpnOptionsImpl;
+      required final String dnsServerAddress,
+      final bool dozeSuspend}) = _$AndroidVpnOptionsImpl;
 
   factory _AndroidVpnOptions.fromJson(Map<String, dynamic> json) =
       _$AndroidVpnOptionsImpl.fromJson;
@@ -1263,6 +1284,8 @@ abstract class _AndroidVpnOptions implements AndroidVpnOptions {
   List<String> get routeAddress;
   @override
   String get dnsServerAddress;
+  @override
+  bool get dozeSuspend;
 
   /// Create a copy of AndroidVpnOptions
   /// with the given fields replaced by the non-null parameter values.

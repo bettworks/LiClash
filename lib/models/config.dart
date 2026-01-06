@@ -86,9 +86,6 @@ class AppSettingProps with _$AppSettingProps {
     @Default(true) bool minimizeOnExit,
     @Default(false) bool hidden,
     @Default(false) bool developerMode,
-    @Default(false) bool dozeSupport,
-    @Default(false) bool smartSuspendEnabled,
-    @Default('') String smartSuspendIps,
     @Default(RecoveryStrategy.compatible) RecoveryStrategy recoveryStrategy,
   }) = _AppSettingProps;
 
@@ -148,6 +145,7 @@ class VpnProps with _$VpnProps {
     @Default(true) bool systemProxy,
     @Default(false) bool ipv6,
     @Default(true) bool allowBypass,
+    @Default(false) bool dozeSuspend,
     @Default(defaultAccessControl) AccessControl accessControl,
   }) = _VpnProps;
 

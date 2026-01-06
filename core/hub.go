@@ -465,6 +465,17 @@ func handleSetupConfig(bytes []byte) string {
 	return ""
 }
 
+func handleSuspend(suspended bool) bool {
+	if suspended {
+		log.Infoln("[APP] Suspend mode enabled")
+		tunnel.OnSuspend()
+	} else {
+		log.Infoln("[APP] Resume from suspend")
+		tunnel.OnRunning()
+	}
+	return true
+}
+
 func init() {
 	adapter.UrlTestHook = func(url string, name string, delay uint16) {
 		delayData := &Delay{

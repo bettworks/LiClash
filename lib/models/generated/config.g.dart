@@ -27,9 +27,6 @@ _$AppSettingPropsImpl _$$AppSettingPropsImplFromJson(
       minimizeOnExit: json['minimizeOnExit'] as bool? ?? true,
       hidden: json['hidden'] as bool? ?? false,
       developerMode: json['developerMode'] as bool? ?? false,
-      dozeSupport: json['dozeSupport'] as bool? ?? false,
-      smartSuspendEnabled: json['smartSuspendEnabled'] as bool? ?? false,
-      smartSuspendIps: json['smartSuspendIps'] as String? ?? '',
       recoveryStrategy: $enumDecodeNullable(
               _$RecoveryStrategyEnumMap, json['recoveryStrategy']) ??
           RecoveryStrategy.compatible,
@@ -56,9 +53,6 @@ Map<String, dynamic> _$$AppSettingPropsImplToJson(
       'minimizeOnExit': instance.minimizeOnExit,
       'hidden': instance.hidden,
       'developerMode': instance.developerMode,
-      'dozeSupport': instance.dozeSupport,
-      'smartSuspendEnabled': instance.smartSuspendEnabled,
-      'smartSuspendIps': instance.smartSuspendIps,
       'recoveryStrategy': _$RecoveryStrategyEnumMap[instance.recoveryStrategy]!,
     };
 
@@ -146,6 +140,7 @@ _$VpnPropsImpl _$$VpnPropsImplFromJson(Map<String, dynamic> json) =>
       systemProxy: json['systemProxy'] as bool? ?? true,
       ipv6: json['ipv6'] as bool? ?? false,
       allowBypass: json['allowBypass'] as bool? ?? true,
+      dozeSuspend: json['dozeSuspend'] as bool? ?? false,
       accessControl: json['accessControl'] == null
           ? defaultAccessControl
           : AccessControl.fromJson(
@@ -158,6 +153,7 @@ Map<String, dynamic> _$$VpnPropsImplToJson(_$VpnPropsImpl instance) =>
       'systemProxy': instance.systemProxy,
       'ipv6': instance.ipv6,
       'allowBypass': instance.allowBypass,
+      'dozeSuspend': instance.dozeSuspend,
       'accessControl': instance.accessControl,
     };
 

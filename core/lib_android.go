@@ -164,6 +164,7 @@ func handleGetAndroidVpnOptions() string {
 		RouteAddress:     currentConfig.General.Tun.RouteAddress,
 		BypassDomain:     state.CurrentState.BypassDomain,
 		DnsServerAddress: state.GetDnsServerAddress(),
+		DozeSuspend:      state.CurrentState.VpnProps.DozeSuspend,
 	}
 	data, err := json.Marshal(options)
 	if err != nil {

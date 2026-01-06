@@ -91,6 +91,7 @@ class AndroidVpnOptions with _$AndroidVpnOptions {
     required String ipv6Address,
     @Default([]) List<String> routeAddress,
     required String dnsServerAddress,
+    @Default(false) bool dozeSuspend,
   }) = _AndroidVpnOptions;
 
   factory AndroidVpnOptions.fromJson(Map<String, Object?> json) =>
