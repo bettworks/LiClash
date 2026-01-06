@@ -469,6 +469,23 @@ class MessageLookup extends MessageLookupByLibrary {
     "otherSettingsDesc": MessageLookupByLibrary.simpleMessage(
       "Modify other related settings",
     ),
+    "smartAutoStop": MessageLookupByLibrary.simpleMessage("Smart Auto-Stop"),
+    "smartAutoStopDesc": MessageLookupByLibrary.simpleMessage(
+      "Stop VPN when connected to specified intranet",
+    ),
+    "networkMatch": MessageLookupByLibrary.simpleMessage("Network Match"),
+    "networkMatchHint": MessageLookupByLibrary.simpleMessage(
+      "Enter IP or CIDR, max 2, comma separated",
+    ),
+    "smartAutoStopServiceRunning": MessageLookupByLibrary.simpleMessage(
+      "Smart Auto-Stop service running",
+    ),
+    "invalidIpFormat": MessageLookupByLibrary.simpleMessage(
+      "Invalid IP or CIDR format",
+    ),
+    "tooManyRules": MessageLookupByLibrary.simpleMessage(
+      "Maximum 2 rules allowed",
+    ),
     "dozeSuspend": MessageLookupByLibrary.simpleMessage("Doze Suspend"),
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "Enable Doze suspend mode support",

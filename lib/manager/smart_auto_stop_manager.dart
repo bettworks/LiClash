@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:li_clash/clash/lib.dart';
 import 'package:li_clash/common/common.dart';
 import 'package:li_clash/common/network_matcher.dart';
 import 'package:li_clash/plugins/vpn.dart';
@@ -189,9 +190,9 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
       if (system.isAndroid) {
         // Use smart resume to restart from smart-stopped state
         // We need to get the VPN options from the current config
-        final clashLibHandler = globalState.clashLibHandler;
-        if (clashLibHandler != null) {
-          final options = clashLibHandler.getAndroidVpnOptions();
+        final handler = clashLibHandler;
+        if (handler != null) {
+          final options = handler.getAndroidVpnOptions();
           await vpn?.smartResume(options);
         } else {
           // Fallback to normal start

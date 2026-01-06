@@ -240,6 +240,41 @@ class AppLocalizations {
     return Intl.message('Modify other related settings', name: 'otherSettingsDesc', desc: '', args: []);
   }
 
+  /// `Smart Auto-Stop`
+  String get smartAutoStop {
+    return Intl.message('Smart Auto-Stop', name: 'smartAutoStop', desc: '', args: []);
+  }
+
+  /// `Stop VPN when connected to specified intranet`
+  String get smartAutoStopDesc {
+    return Intl.message('Stop VPN when connected to specified intranet', name: 'smartAutoStopDesc', desc: '', args: []);
+  }
+
+  /// `Network Match`
+  String get networkMatch {
+    return Intl.message('Network Match', name: 'networkMatch', desc: '', args: []);
+  }
+
+  /// `Enter IP or CIDR, max 2, comma separated`
+  String get networkMatchHint {
+    return Intl.message('Enter IP or CIDR, max 2, comma separated', name: 'networkMatchHint', desc: '', args: []);
+  }
+
+  /// `Smart Auto-Stop service running`
+  String get smartAutoStopServiceRunning {
+    return Intl.message('Smart Auto-Stop service running', name: 'smartAutoStopServiceRunning', desc: '', args: []);
+  }
+
+  /// `Invalid IP or CIDR format`
+  String get invalidIpFormat {
+    return Intl.message('Invalid IP or CIDR format', name: 'invalidIpFormat', desc: '', args: []);
+  }
+
+  /// `Maximum 2 rules allowed`
+  String get tooManyRules {
+    return Intl.message('Maximum 2 rules allowed', name: 'tooManyRules', desc: '', args: []);
+  }
+
   /// `Doze Suspend`
   String get dozeSuspend {
     return Intl.message('Doze Suspend', name: 'dozeSuspend', desc: '', args: []);
