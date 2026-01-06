@@ -20,6 +20,21 @@ jobs:
           - platform: windows
             os: windows-2022
             arch: amd64
+          - platform: windows
+            os: windows-11-arm
+            arch: arm64
+          - platform: macos
+            os: macos-15-intel
+            arch: amd64
+          - platform: macos
+            os: macos-latest
+            arch: arm64
+          - platform: linux
+            os: ubuntu-24.04
+            arch: amd64
+          - platform: linux
+            os: ubuntu-24.04-arm
+            arch: arm64
 
     steps:
       - name: Setup rust
@@ -55,26 +70,26 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: false
+          # Customize cache to avoid conflicts
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/build-cache-1
+            caches/keyrings
+          # Add retry for network issues
+          add-job-summary-as-pr-comment: never
 
-      - name: Configure Gradle Mirror
+      - name: Configure Gradle
         if: startsWith(matrix.platform,'android')
         run: |
           mkdir -p ~/.gradle
           cat > ~/.gradle/init.gradle << 'EOF'
           allprojects {
-            buildscript {
-              repositories {
-                maven { url 'https://maven.aliyun.com/repository/google' }
-                maven { url 'https://maven.aliyun.com/repository/public' }
-                maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
-                google()
-                mavenCentral()
-              }
-            }
             repositories {
-              maven { url 'https://maven.aliyun.com/repository/google' }
-              maven { url 'https://maven.aliyun.com/repository/public' }
-              maven { url 'https://maven.aliyun.com/repository/jcenter' }
+              maven { url = uri("https://maven.aliyun.com/repository/google") }
+              maven { url = uri("https://maven.aliyun.com/repository/public") }
               google()
               mavenCentral()
             }
