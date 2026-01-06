@@ -15,6 +15,14 @@ pluginManagement {
         gradlePluginPortal()
         maven { url = uri("https://maven.aliyun.com/repository/public") }
     }
+    
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.namespace == "org.jetbrains.kotlin") {
+                useVersion("1.9.24")
+            }
+        }
+    }
 }
 
 
