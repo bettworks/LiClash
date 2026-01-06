@@ -1,5 +1,6 @@
 import 'package:li_clash/common/common.dart';
 import 'package:li_clash/providers/config.dart';
+import 'package:li_clash/providers/providers.dart';
 import 'package:li_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +11,7 @@ class DozeSuspendItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dozeSuspend = ref.watch(
-      vpnPropsProvider.select((state) => state.dozeSuspend),
+      vpnSettingProvider.select((state) => state.dozeSuspend),
     );
     return ListItem.switchItem(
       title: Text(appLocalizations.dozeSuspend),
@@ -18,7 +19,7 @@ class DozeSuspendItem extends ConsumerWidget {
       delegate: SwitchDelegate(
         value: dozeSuspend,
         onChanged: (bool value) {
-          ref.read(vpnPropsProvider.notifier).updateState(
+          ref.read(vpnSettingProvider.notifier).updateState(
                 (state) => state.copyWith(
                   dozeSuspend: value,
                 ),
