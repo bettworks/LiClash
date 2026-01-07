@@ -317,14 +317,6 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             // Uninstall SuspendModule
             suspendModule?.uninstall()
             suspendModule = null
-            
-            // If smart stopped, keep service running but stop TUN
-            if (GlobalState.isSmartStopped) {
-                Core.stopTun()
-                // Update notification text (optional, handled by getStartForegroundParams callback)
-                return
-            }
-            
             liClashService?.stop()
             stopForegroundJob()
             Core.stopTun()
