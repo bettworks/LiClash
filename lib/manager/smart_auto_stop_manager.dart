@@ -111,15 +111,7 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
     final networks = vpnProps.smartAutoStopNetworks;
     if (networks.isEmpty) return;
     
-    // Determine running state
-    // On Android, directly query the native side for the most accurate status
-    bool isVpnRunning;
-    if (system.isAndroid) {
-      await globalState.updateStartTime();
-      isVpnRunning = globalState.isStart;
-    } else {
-      isVpnRunning = ref.read(runTimeProvider) != null;
-    }
+    final isVpnRunning = ref.read(runTimeProvider) != null;
     final isSmartStopped = ref.read(isSmartStoppedProvider);
     
     // Get current IP
@@ -139,7 +131,6 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
     // Use NetworkMatcher for IP matching
     final shouldStop = NetworkMatcher.matchAny(currentIp, networks);
 
-    commonPrint.log('SmartAutoStop Check: IP=$currentIp, ShouldStop=$shouldStop, Running=$isVpnRunning, SmartStopped=$isSmartStopped, Rules=$networks');
     
     if (shouldStop && isVpnRunning && !isSmartStopped) {
       // Stop VPN
