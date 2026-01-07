@@ -101,6 +101,7 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
     
     // Delay a bit to let network stabilize
     await Future.delayed(const Duration(milliseconds: 500));
+    _lastCheckedIp = null; // Force re-check
     await _checkCurrentNetwork();
   }
 
