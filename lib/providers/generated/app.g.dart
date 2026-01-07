@@ -382,15 +382,14 @@ final systemUiOverlayStyleStateProvider = AutoDisposeNotifierProvider<
 );
 
 typedef _$SystemUiOverlayStyleState = AutoDisposeNotifier<SystemUiOverlayStyle>;
-String _$isSmartStoppedHash() => r'd45136bfecfca577121a8027489bce0e406a6f26';
+String _$isSmartStoppedHash() => r'a75b6e26a7d3bf1a7a0aba2419875badb7f0b42f';
 
 /// Provider to track if VPN was stopped by Smart Auto Stop feature.
 /// This is used to show different notification content when smart-stopped.
 ///
 /// Copied from [IsSmartStopped].
 @ProviderFor(IsSmartStopped)
-final isSmartStoppedProvider =
-    AutoDisposeNotifierProvider<IsSmartStopped, bool>.internal(
+final isSmartStoppedProvider = NotifierProvider<IsSmartStopped, bool>.internal(
   IsSmartStopped.new,
   name: r'isSmartStoppedProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -400,6 +399,6 @@ final isSmartStoppedProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$IsSmartStopped = AutoDisposeNotifier<bool>;
+typedef _$IsSmartStopped = Notifier<bool>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
