@@ -175,50 +175,27 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
   }
 
   Future<void> _stopVpn() async {
-    commonPrint.log('Smart Auto Stop: _stopVpn called, isInit=${globalState.isInit}');
-    if (!globalState.isInit) {
-      commonPrint.log('Smart Auto Stop: globalState not initialized, cannot stop VPN');
-      return;
+    if (!globalState.isInit) return;
+    
+    // On Android, set the native flag first so handleStop knows to keep service alive
+    if (system.isAndroid) {
+      await service?.setSmartStopped(true);
     }
     
-    // On Android, use smartStop to keep foreground service running
-    if (system.isAndroid) {
-      commonPrint.log('Smart Auto Stop: Using Android smartStop');
-      await service?.smartStop();
-      // Also update the Dart-side state
-      globalState.startTime = null;
-      clashCore.resetTraffic();
-      ref.read(trafficsProvider.notifier).clear();
-      ref.read(totalTrafficProvider.notifier).value = Traffic();
-      ref.read(runTimeProvider.notifier).value = null;
-      commonPrint.log('Smart Auto Stop: smartStop completed');
-    } else {
-      // On other platforms, use regular stop
-      await globalState.appController.updateStatus(false);
-      commonPrint.log('Smart Auto Stop: updateStatus(false) completed');
-    }
+    // Use standard stop for all platforms
+    await globalState.appController.updateStatus(false);
   }
 
   Future<void> _restartVpn() async {
-    commonPrint.log('Smart Auto Stop: _restartVpn called, isInit=${globalState.isInit}');
-    if (!globalState.isInit) {
-      commonPrint.log('Smart Auto Stop: globalState not initialized, cannot restart VPN');
-      return;
+    if (!globalState.isInit) return;
+    
+    // On Android, clear the native flag
+    if (system.isAndroid) {
+      await service?.setSmartStopped(false);
     }
     
-    // On Android, use smartResume to restart from smart-stopped state
-    if (system.isAndroid) {
-      commonPrint.log('Smart Auto Stop: Using Android smartResume');
-      await service?.smartResume();
-      // Also update the Dart-side state
-      globalState.startTime = DateTime.now();
-      globalState.appController.addCheckIpNumDebounce();
-      commonPrint.log('Smart Auto Stop: smartResume completed');
-    } else {
-      // On other platforms, use regular start
-      await globalState.appController.updateStatus(true);
-      commonPrint.log('Smart Auto Stop: updateStatus(true) completed');
-    }
+    // Use standard start for all platforms
+    await globalState.appController.updateStatus(true);
   }
 
   @override
