@@ -318,7 +318,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "otherSettings": MessageLookupByLibrary.simpleMessage("其他设置"),
     "otherSettingsDesc": MessageLookupByLibrary.simpleMessage("修改其他相关设置"),
     "smartAutoStop": MessageLookupByLibrary.simpleMessage("智能启停"),
-    "smartAutoStopDesc": MessageLookupByLibrary.simpleMessage("连接指定内网后停止VPN"),
+    "smartAutoStopDesc": MessageLookupByLibrary.simpleMessage("连接指定内网后停止代理服务"),
     "networkMatch": MessageLookupByLibrary.simpleMessage("网络匹配"),
     "networkMatchHint": MessageLookupByLibrary.simpleMessage("输入IP或CIDR，最多2个，逗号分隔"),
     "smartAutoStopServiceRunning": MessageLookupByLibrary.simpleMessage("智能启停服务运行中"),

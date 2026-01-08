@@ -33,10 +33,25 @@ class LiClashService : Service(), BaseServiceInterface {
 
     @SuppressLint("ForegroundServiceType")
     override suspend fun startForeground(title: String, content: String) {
+        val separator = " ︙ "
+        val combinedText = "$title$separator$content"
+        val spannable = android.text.SpannableString(combinedText)
+        val startIndex = title.length + separator.length
+        
+        if (startIndex < combinedText.length) {
+            spannable.setSpan(
+                android.text.style.RelativeSizeSpan(0.83f),
+                startIndex,
+                combinedText.length,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+
         startForeground(
             notificationBuilder()
-                .setContentTitle(title)
-                .setContentText(content).build()
+                .setContentTitle(spannable)
+                .setContentText(null)
+                .build()
         )
     }
 

@@ -186,6 +186,7 @@ class VpnButton extends StatelessWidget {
                   generateSection(
                     items: [
                       const VPNItem(),
+                      const IcmpForwardingItem(),
                       const VpnSystemProxyItem(),
                       const TunStackItem(),
                     ],
