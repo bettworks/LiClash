@@ -260,6 +260,7 @@ class VpnState with _$VpnState {
   const factory VpnState({
     required TunStack stack,
     required VpnProps vpnProps,
+    @Default(false) bool disableIcmpForwarding,
   }) = _VpnState;
 }
 

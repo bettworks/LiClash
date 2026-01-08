@@ -195,17 +195,17 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
   Future<void> _restartVpn() async {
     if (system.isAndroid) {
        // Android: Resume from smart-stop mode
-       // Ensure config is up-to-date (e.g. ICMP settings)
-       await globalState.appController.updateClashConfig();
-       
        await service?.setSmartStopped(false);
        await service?.smartResume();
        
        // Update Dart state to look "running"
        globalState.startTime = DateTime.now();
+       
+       // Reload config to ensure latest settings are applied
+       globalState.appController.applyProfileDebounce(silence: true);
        globalState.appController.addCheckIpNumDebounce();
     } else {
-      // Desktop: Full start
+      // Desktop: Full start (updateStatus already handles config reload)
       await globalState.appController.updateStatus(true);
     }
   }

@@ -232,11 +232,7 @@ class IcmpForwardingItem extends ConsumerWidget {
                   disableIcmpForwarding: !value,
                 ),
               );
-          
-          if (system.isWindows && ref.read(runTimeProvider) != null) {
-            globalState.showNotifier(appLocalizations.vpnTip);
-          }
-          // 配置会通过 ClashManager 的监听器自动更新到内核
+          // vpnStateProvider 会监听此变化并触发 vpnTip 提示
         },
       ),
     );

@@ -194,10 +194,15 @@ VpnState vpnState(Ref ref) {
   final stack = ref.watch(
     patchClashConfigProvider.select((state) => state.tun.stack),
   );
+  // Also watch ICMP forwarding setting to trigger vpnTip
+  final disableIcmpForwarding = ref.watch(
+    patchClashConfigProvider.select((state) => state.tun.disableIcmpForwarding),
+  );
 
   return VpnState(
     stack: stack,
     vpnProps: vpnProps,
+    disableIcmpForwarding: disableIcmpForwarding,
   );
 }
 
