@@ -134,11 +134,6 @@ class AppController {
       return;
     }
 
-    await globalState.handleStart([
-      updateRunTime,
-      updateTraffic,
-    ]);
-
     // 检查是否需要重新应用配置
     final needReapply = await _checkIfNeedReapply();
     if (needReapply) {
@@ -146,6 +141,11 @@ class AppController {
       await _quickSetupConfig();
     }
     
+    await globalState.handleStart([
+      updateRunTime,
+      updateTraffic,
+    ]);
+
     addCheckIpNumDebounce();
     
     // 非 TUN 模式或移动端，立即加载后台数据

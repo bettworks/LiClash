@@ -195,6 +195,9 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
   Future<void> _restartVpn() async {
     if (system.isAndroid) {
        // Android: Resume from smart-stop mode
+       // Ensure config is up-to-date (e.g. ICMP settings)
+       await globalState.appController.updateClashConfig();
+       
        await service?.setSmartStopped(false);
        await service?.smartResume();
        
