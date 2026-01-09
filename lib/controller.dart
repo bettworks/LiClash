@@ -134,17 +134,18 @@ class AppController {
       return;
     }
 
+    // Android 和桌面非 TUN 模式：先配置再启动
+    // 检查是否需要重新应用配置
+    final needReapply = await _checkIfNeedReapply();
+    if (needReapply) {
+      // 在启动前先设置配置，确保 Android VPN 启动时读取到最新配置
+      await _quickSetupConfig();
+    }
+
     await globalState.handleStart([
       updateRunTime,
       updateTraffic,
     ]);
-
-    // 检查是否需要重新应用配置
-    final needReapply = await _checkIfNeedReapply();
-    if (needReapply) {
-      // 只设置配置，不更新组和提供者（这些在后台执行）
-      await _quickSetupConfig();
-    }
     
     addCheckIpNumDebounce();
     
