@@ -230,6 +230,7 @@ func updateConfig(params *UpdateParams) {
 		general.Tun.RouteAddress = *params.Tun.RouteAddress
 		general.Tun.DNSHijack = *params.Tun.DNSHijack
 		general.Tun.Stack = *params.Tun.Stack
+		general.Tun.DisableICMPForwarding = *params.Tun.DisableICMPForwarding
 	}
 
 	updateListeners()

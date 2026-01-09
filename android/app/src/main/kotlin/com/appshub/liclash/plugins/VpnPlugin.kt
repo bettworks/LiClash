@@ -222,11 +222,15 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             // 允许在智能停止状态下更新通知
             if (GlobalState.runState.value != RunState.START && !GlobalState.isSmartStopped) return
             val data = flutterMethodChannel.awaitResult<String>("getStartForegroundParams")
-            val startForegroundParams = if (data != null) Gson().fromJson(
-                data, StartForegroundParams::class.java
-            ) else StartForegroundParams(
-                title = "", content = ""
-            )
+            
+            // ✅ 解析并检查 null，使用 Elvis 操作符提供默认值
+            val startForegroundParams = try {
+                data?.let { Gson().fromJson(it, StartForegroundParams::class.java) }
+            } catch (e: Exception) {
+                android.util.Log.e("VpnPlugin", "Failed to parse StartForegroundParams: ${e.message}")
+                null
+            } ?: StartForegroundParams(title = "", content = "")
+            
             if (lastStartForegroundParams != startForegroundParams) {
                 lastStartForegroundParams = startForegroundParams
                 liClashService?.startForeground(
@@ -234,6 +238,8 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     startForegroundParams.content,
                 )
             }
+        } catch (e: Exception) {
+            android.util.Log.e("VpnPlugin", "startForeground error: ${e.message}")
         } finally {
             GlobalState.runLock.unlock()
         }
