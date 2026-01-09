@@ -371,7 +371,7 @@ class AppController {
     // Check if ICMP forwarding changed on Android to trigger restart
     bool needRestart = false;
     if (system.isAndroid) {
-       final oldConfig = globalState.config.tun.disableIcmpForwarding;
+       final oldConfig = globalState.config.patchClashConfig.tun.disableIcmpForwarding;
        final newConfig = updateParams.tun.disableIcmpForwarding;
        if (oldConfig != newConfig) {
            needRestart = true;
@@ -396,8 +396,11 @@ class AppController {
        await globalState.handleStart();
        
        // Update globalState to reflect the change and avoid repeated restarts
-       globalState.config = globalState.config.copyWith.tun(
-          disableIcmpForwarding: updateParams.tun.disableIcmpForwarding
+       final currentPatchConfig = globalState.config.patchClashConfig;
+       globalState.config = globalState.config.copyWith(
+          patchClashConfig: currentPatchConfig.copyWith.tun(
+            disableIcmpForwarding: updateParams.tun.disableIcmpForwarding,
+          ),
        );
     }
   }
