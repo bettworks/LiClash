@@ -107,7 +107,7 @@ extension LogLevelExt on LogLevel {
       LogLevel.silent => Colors.grey.shade700,
       LogLevel.debug => Colors.grey.shade400,
       LogLevel.info => null,
-      LogLevel.warning => Colors.yellowAccent,
+      LogLevel.warning => const Color.fromARGB(230, 255, 166, 0),
       LogLevel.error => Colors.redAccent,
     };
   }

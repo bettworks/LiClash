@@ -53,8 +53,6 @@ class UaItem extends ConsumerWidget {
         title: 'UA',
         options: [
           null,
-          'clash-verge/v1.6.6',
-          'ClashforWindows/0.19.23',
         ],
         value: globalUa,
         onChanged: (value) {

@@ -110,9 +110,10 @@ class _FcmStatusState extends State<FcmStatus> {
                               .adjustSize(2),
                         ),
                         const SizedBox(width: 4),
-                        const Text(
-                          'Minutes',
-                          style: TextStyle(fontSize: 14),
+                        Text(
+                          ' Minutes',
+                          style: context.textTheme.bodyMedium?.toLight
+                              .adjustSize(0),
                         ),
                       ],
                     );

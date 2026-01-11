@@ -81,9 +81,9 @@ class _ConnectionsCountState extends State<ConnectionsCount> {
                   style: context.textTheme.bodyLarge?.toLight.adjustSize(2),
                 ),
                 const SizedBox(width: 4),
-                const Text(
-                  'Connections',
-                  style: TextStyle(fontSize: 14),
+                Text(
+                  ' Connections',
+                  style: context.textTheme.bodyMedium?.toLight.adjustSize(0),
                 ),
               ],
             ),

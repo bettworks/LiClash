@@ -123,7 +123,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "开启将失去部分应用能力，获得全量的Clash的支持",
     ),
     "confirm": MessageLookupByLibrary.simpleMessage("确定"),
-    "connection": MessageLookupByLibrary.simpleMessage("连接"),
+    "connection": MessageLookupByLibrary.simpleMessage("连接数量"),
     "connections": MessageLookupByLibrary.simpleMessage("连接"),
     "connectionsDesc": MessageLookupByLibrary.simpleMessage("查看当前连接数据"),
     "connectivity": MessageLookupByLibrary.simpleMessage("连通性："),

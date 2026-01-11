@@ -438,7 +438,7 @@
   "networkType": "网络类型",
   "proxyChains": "代理链",
   "log": "日志",
-  "connection": "连接",
+  "connection": "连接数量",
   "request": "请求",
   "switchLabel": "开关",
   "noStatusAvailable": "未获取到状态",
